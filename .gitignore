@@ -26,3 +26,12 @@
 *.exe
 *.out
 *.app
+
+# nested folders
+bin/
+CMakeFiles/
+images/
+*.cmake
+CMakeCache.txt
+Makefile
+Sheet[0-9][0-9].pdf
