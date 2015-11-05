@@ -9,10 +9,10 @@ using namespace cv;
 
 /*=========================================
 # Group member (Name, Student ID, E-Mail) 
-	- Omar, 
+	- Omar Trinidad Gutierrez Mendez, 2850441, omar.vpa@gmail.com 
 	- Shinho Kang, 2890169, wis.shinho.kang@gmail.com
 # Exercise Sheet 01
-Please read the "README" file to compile and execute this source code.
+	Please read the "README" file to compile and execute this source code.
 =========================================*/
 
 int main(int argc, char** argv) {
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 		}
 	}
 	tock = getTickCount();
-    cout << " Computing integral images computed in " << (tock-tick)/getTickFrequency() << " seconds." << endl;
+    cout << " Computing customed integral images computed in " << (tock-tick)/getTickFrequency() << " seconds." << endl;
 	cout << " The integral value is " << sumOfPixels << endl << endl;
 	
 	waitKey(0); // waits until the user presses a button and then continues with task 2 -> uncomment this
@@ -363,14 +363,13 @@ int main(int argc, char** argv) {
 	// Declare Kernels
 	Mat kernel1 = (Mat_<float>(3,3) << 0.0113, 0.0838, 0.0113, 0.0838, 0.6193, 0.0838, 0.0113, 0.0838, 0.0113);	
 	Mat kernel2 = (Mat_<float>(3,3) << -0.8984, 0.1472, 1.1410, -1.9075, 0.1566, 2.1359, -0.8659, 0.0573, 1.0337);
-	Mat kerneltest = (Mat_<float>(3,3) << 1, 2, 1, 2, 4, 2, 1, 2, 1);
     //  ====(a)==================================================================
 	// TODO: implement your solution here
 	// filter the image using "filter2D"
 	Mat img_f2D_k1, img_f2D_k2;
 	filter2D(bonn_gray, img_f2D_k1, bonn_gray.depth(), kernel1, Point(-1,-1), 0, BORDER_DEFAULT);
 	filter2D(bonn_gray, img_f2D_k2, bonn_gray.depth(), kernel2, Point(-1,-1), 0, BORDER_DEFAULT); 
-    
+     
 	//display the result images
 	imshow("filter2D - Kernel1", img_f2D_k1);
 	imshow("filter2D - Kernel2", img_f2D_k2);
@@ -378,30 +377,67 @@ int main(int argc, char** argv) {
     //  ====(b)==================================================================	
 	// TODO: implement your solution here
 	// seperate each kernel with opencv SVD class
-	//Mat w,u,vt;
-	//SVD(A,S,U,V,0);
-	//SVD::compute(kernel1, w, u, vt, 0);
-	//cout << w << endl << endl << u << endl << endl << vt << endl;
-	//SVD svd2 = SVD(kernel2, 0);
-	SVD svd1 = SVD(kerneltest, 0);
-	cout << kerneltest << endl << endl;
-	cout << svd1.w << endl << endl << svd1.u << endl << endl << svd1.vt << endl << endl;
+	Mat img_sepF2D_k1, img_sepF2D_k2;
 	
-//	Mat t1 = svd1.u * svd1.w;
-//	cout << t1 << endl << endl;
-//	Mat t2 = svd1.w * svd1.vt;
-//	cout << t2 << endl << endl;
-	//cout << svd1.u.col(0) << endl << endl;
-	//cout << svd1.vt.row(0) << endl;
+	// ======seperate kernal1 using SVD 
+	SVD kernel1_svd = SVD(kernel1, 0);
+	Mat u1, vt1;
+	
+	// kernel X
+	u1 = kernel1_svd.u.col(0);
+	u1 *= sqrt( kernel1_svd.w.at<float>(0,0) );	
+
+	// kernel Y
+	vt1 = kernel1_svd.vt.row(0);
+	vt1 *= sqrt( kernel1_svd.w.at<float>(0,0) );
+
+	// apply sepFilter2D with 2 seperated kernels.
+	sepFilter2D(bonn_gray, img_sepF2D_k1, bonn_gray.depth(), u1, vt1, Point(-1,-1), 0, BORDER_DEFAULT );
+
+
+	// ======seperate kernal2 using SVD 
+	SVD kernel2_svd = SVD(kernel2, 0);
+	Mat u2, vt2; 
+	
+	cout << "kernel2 - w" << endl;
+	cout << kernel2_svd.w << endl << endl;
+	
+	// kernel X
+	u2 = kernel2_svd.u.col(0);
+	u2 *= sqrt( kernel2_svd.w.at<float>(0,0) );
+	
+	// kernel Y
+	vt2 = kernel2_svd.vt.row(0);
+	vt2 *= sqrt( kernel2_svd.w.at<float>(0,0) );
+	
+	// apply sepFilter2D with 2 seperated kernels.
+	sepFilter2D(bonn_gray, img_sepF2D_k2, bonn_gray.depth(), u2, vt2, Point(-1,-1), 0, BORDER_DEFAULT );
+	
+	// display filtered result		
+	imshow("sepfilter2D - Kernel1", img_sepF2D_k1);
+	imshow("sepfilter2D - Kernel2", img_sepF2D_k2);
 	
 			
     //  ====(c)==================================================================	
 	// TODO: implement your solution here
-	// ...			
+	// compare blurring methods
+	// TODO: Compute absolute differences between pixel intensities of (a), (b) and (c) using "absdiff"
+    Mat diff8_k1;	// differences between between pixel intensities
+	Mat diff8_k2;	// differences between between pixel intensities
+    absdiff(img_f2D_k1, img_sepF2D_k1, diff8_k1);
+	absdiff(img_f2D_k2, img_sepF2D_k2, diff8_k2);
 	
-	
-	
-	
+	//imshow("diff1", diff8_k1);
+	//imshow("diff2", diff8_k2);
+			
+	// TODO: Find the maximum pixel error using "minMaxLoc"
+    double maxVal8_k1, maxVal8_k2;
+    minMaxLoc(diff8_k1, &minVal, &maxVal8_k1);
+	minMaxLoc(diff8_k2, &minVal, &maxVal8_k2);
+    cout << " Maximum pixel error between filtered images using kernel1 and seperated kernel1 " << maxVal8_k1 << endl;
+	cout << " Maximum pixel error between filtered images using kernel2 and seperated kernel2 " << maxVal8_k2 << endl;
+	cout << endl;
+
 	waitKey(0);
 	cout << "Program finished successfully" << endl;
 	destroyAllWindows(); 
