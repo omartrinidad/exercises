@@ -2,11 +2,10 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
+#include <math.h>
 
 using namespace std;
 using namespace cv;
-
 
 void part1();
 void part2();
@@ -29,9 +28,9 @@ int main(int argc, char* argv[])
     // Uncomment the part of the exercise that you wish to implement.
     // For the final submission all implemented parts should be uncommented.
 
-    part1();
+    //part1();
     //part2();
-    //part3();
+    part3();
     //part4();
     //part5();
 
@@ -188,24 +187,68 @@ void part3()
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
 
-    cv::Mat           im_Traffic_BGR = cv::imread("./images/traffic.jpg"); // traffic.jpg // circles.png
+    // traffic.jpg // circles.png
+    cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
+
     // Blur to denoise
-    cv::GaussianBlur( im_Traffic_BGR, im_Traffic_BGR, cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
+    cv::GaussianBlur(im_Traffic_BGR, im_Traffic_BGR, cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT);
+
     // BGR to Gray
-    cv::Mat                           im_Traffic_Gray;
-    cv::cvtColor(     im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
+    cv::Mat im_Traffic_Gray;
+    cv::cvtColor(im_Traffic_BGR, im_Traffic_Gray, CV_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
 
     // Perform the computations asked in the exercise sheet
+    cv::Mat horizontal, vertical, sobel;
+    cv::Mat magnitude, angle; 
+    cv::Mat magnitude_, angle_; 
+
+    Sobel(im_Traffic_Gray, horizontal, CV_32F, 1, 0);
+    Sobel(im_Traffic_Gray, vertical, CV_32F, 0, 1);
+
+    sobel = abs(vertical) + abs(horizontal);
+
+
+    /* cartToPolar1 */
+    cartToPolar(horizontal, vertical, magnitude, angle);
+
+    /* cartToPolar2 */
+
+    int rows = im_Traffic_Gray.rows;
+    int cols = im_Traffic_Gray.cols;
+    magnitude_ = Mat::zeros(rows, cols, CV_32F);
+    angle_ = Mat::zeros(rows, cols, CV_32F);
+    
+    /* improve this section with pointers */
+    for (int y = 0; y < rows; ++y) {
+        for (int x = 0; x < cols; ++x) {
+            float mag = sqrt(pow(horizontal.at<float>(y, x), 2) + pow(horizontal.at<float>(y, x), 2));
+            magnitude_.at<float>(y, x) = mag;
+            float ang = atan2(horizontal.at<float>(y, x), vertical.at<float>(y, x)) * (180/M_PI);
+            angle_.at<float>(y, x) = ang;
+        }
+    }
 
     // Show results
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
     // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
+    /*
+    imshow("Gray image", im_Traffic_Gray);
+    imshow("Vertical", vertical);
+    imshow("Horizontal", horizontal);
+    imshow("Sobel", sobel);
+    */
+
+    imshow("Magnitud", magnitude);
+    imshow("Angle", angle);
+    imshow("Magnitud_", magnitude_);
+    imshow("Angle_", angle_);
 
     // Use the function **drawArrow** provided at the end of this file in order to
     // draw Vectors showing the Gradient Magnitude and Orientation
     // (to avoid clutter, draw every 10nth gradient,
     // only if the magnitude is above a threshold)
 
+    waitKey(0);
     cv::destroyAllWindows();
 }
 
