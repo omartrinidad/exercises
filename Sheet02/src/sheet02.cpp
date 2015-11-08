@@ -2,6 +2,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <math.h>
 
 using namespace std;
 using namespace cv;
@@ -18,13 +19,17 @@ void part2();
 void part3();
 void part4();
 void part5();
+void part5_shinho();
 
 void drawArrow(cv::Mat &image, cv::Point p, cv::Scalar color, double scaleMagnitude, double scaleArrowHead, double magnitube, double orientationDegrees);
+void matchingImage(Mat& img, Mat& matching, int y, int x, int rows, int cols);
+
 void displayPyramid(vector<cv::Mat> pyr);
 void displayPyramid(vector<cv::Mat> pyr, string title);
 void buildGaussianPyramid(vector<cv::Mat> &gpyr, Mat img);
 void buildGaussianPyramid_implement(vector<cv::Mat> &gpyr, Mat img);
 void buildLaplacianPyramid(const vector<cv::Mat> gpyr, vector<cv::Mat> &lpyr);
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,9 +43,9 @@ int main(int argc, char* argv[])
     // For the final submission all implemented parts should be uncommented.
     // part1();
     // part2();
-    //part3();
-    //part4();
-    part5();
+    // part3();
+    // part4();
+    // part5();
     
     std::cout <<                                                            std::endl;
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
@@ -185,7 +190,6 @@ void part2()
     cv::destroyAllWindows();
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,24 +206,78 @@ void part3()
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
 
-    cv::Mat           im_Traffic_BGR = cv::imread("./images/traffic.jpg"); // traffic.jpg // circles.png
+    // traffic.jpg // circles.png
+    cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
+
     // Blur to denoise
-    cv::GaussianBlur( im_Traffic_BGR, im_Traffic_BGR, cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
+    cv::GaussianBlur(im_Traffic_BGR, im_Traffic_BGR, cv::Size(7,7), 0, 0, cv::BORDER_DEFAULT);
+
     // BGR to Gray
-    cv::Mat                           im_Traffic_Gray;
-    cv::cvtColor(     im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
+    cv::Mat im_Traffic_Gray;
+    cv::cvtColor(im_Traffic_BGR, im_Traffic_Gray, CV_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
 
     // Perform the computations asked in the exercise sheet
+    cv::Mat horizontal, vertical, sobel;
+    cv::Mat magnitude_, angle_; 
+
+    Sobel(im_Traffic_Gray, horizontal, CV_32F, 1, 0);
+    Sobel(im_Traffic_Gray, vertical, CV_32F, 0, 1);
+    //sobel = abs(vertical) + abs(horizontal);
+
+    /* cartToPolar OpenCV
+    cv::Mat magnitude, angle; 
+    cartToPolar(horizontal, vertical, magnitude, angle);
+    */
+
+    /* cartToPolar2 own implementation */
+    int rows = im_Traffic_Gray.rows;
+    int cols = im_Traffic_Gray.cols;
+    magnitude_ = Mat::zeros(rows, cols, CV_32F);
+    angle_ = Mat::zeros(rows, cols, CV_32F);
+    
+    /* it is possible to improve this section with pointers */
+    for (int y = 0; y < rows; ++y) {
+        for (int x = 0; x < cols; ++x) {
+            float mag = sqrt(pow(horizontal.at<float>(y, x), 2) + pow(vertical.at<float>(y, x), 2));
+            magnitude_.at<float>(y, x) = mag;
+            float ang = atan2(horizontal.at<float>(y, x), vertical.at<float>(y, x)) * (180/M_PI);
+            angle_.at<float>(y, x) = ang;
+        }
+    }
 
     // Show results
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
     // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
+    
+    imshow("Magnitude", magnitude_);
+    waitKey();
+    cv::destroyAllWindows();
+    imshow("Angle", angle_);
+    waitKey();
+    cv::destroyAllWindows();
 
     // Use the function **drawArrow** provided at the end of this file in order to
     // draw Vectors showing the Gradient Magnitude and Orientation
     // (to avoid clutter, draw every 10nth gradient,
     // only if the magnitude is above a threshold)
+    
+    /* Draw the gradients in the original image */
+    Point point;
+    for (int y = 0; y < rows; y+=10) {
+        for (int x = 0; x < cols; x+=10) {
 
+            point.x = x;
+            point.y = y;
+
+            if (magnitude_.at<float>(y, x) > 32) {
+                double an = angle_.at<float>(y, x);
+                drawArrow(im_Traffic_BGR, point, Scalar(0, 130, 255), 3.555, 1.20, 1.25, an);
+            }
+        }
+    }
+
+    imshow("Gradients", im_Traffic_BGR);
+    waitKey(0);
     cv::destroyAllWindows();
 }
 
@@ -241,15 +299,20 @@ void part4()
 
     cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
     // BGR to Gray
-    cv::Mat                       im_Traffic_Gray;
+    cv::Mat im_Traffic_Gray, im_Canny;
     cv::cvtColor( im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY );
 
     // Perform edge detection as described in the exercise sheet
+    Canny(im_Traffic_BGR, im_Canny, 10, 100, 3);
 
     // Show results
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
-    // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
+    // In the end, after the last cv::waitkey(), use **cv::destroyAllWindows()**
+    
+    imshow("gray", im_Traffic_Gray);
+    imshow("canny", im_Canny);
 
+    waitKey(0);
     cv::destroyAllWindows();
 }
 
@@ -259,7 +322,6 @@ void part4()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void part5()
 {
@@ -271,78 +333,57 @@ void part5()
     std::cout <<                                                            std::endl;
 
     // Read image, Blur to denoise
-    cv::Mat                           im_Traffic_BGR = cv::imread("./images/traffic.jpg");
-    cv::GaussianBlur( im_Traffic_BGR, im_Traffic_BGR,  cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
+    cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
+    cv::GaussianBlur(im_Traffic_BGR, im_Traffic_BGR,  cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
+
     // BGR to Gray
-    cv::Mat                           im_Traffic_Gray;
-    cv::cvtColor(     im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY );
+    cv::Mat im_Traffic_Gray, im_Edges;
+    cv::cvtColor(im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY);
 
     // Read Template
     cv::Mat im_Sign_BGR = cv::imread("./images/sign.png");
-    cv::Mat im_Sign_Gray;
+    cv::Mat im_Sign_Gray, im_Sign;
     // BGR to Gray
     cv::cvtColor( im_Sign_BGR, im_Sign_Gray, cv::COLOR_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
     
     Mat im_Traffic_Edge, im_Sign_Edge;
     Mat im_Traffic_distance;
     // Perform the steps described in the exercise sheet
-    Canny(im_Traffic_Gray, im_Traffic_Edge, 50, 200, 3, false );
-    resize(im_Sign_Gray, im_Sign_Gray, Size(70,60));    // rescale template image
-    Canny(im_Sign_Gray, im_Sign_Edge, 50, 150, 3, false );
-    
-    imshow("traffic_gray", im_Traffic_Gray);
-    imshow("traffic_edge", im_Traffic_Edge);
-    imshow("sign_gray", im_Sign_Gray);
-    imshow("sign_edge", im_Sign_Edge);
-    distanceTransform(im_Traffic_Edge, im_Traffic_distance, CV_DIST_L1, DIST_MASK_3);
-    // normalize(im_Traffic_distance, im_Traffic_distance, 0, 1., NORM_MINMAX);
 
-    imshow("traffic_distance", im_Traffic_distance);
-    // cout << im_Traffic_Edge.size().width << " " << im_Traffic_Edge.size().height << endl;
-    // cout << im_Sign_Edge.size().width << " " << im_Sign_Edge.size().height << endl;
-    // cout << endl << im_Traffic_Edge << endl;
-    // cout << endl << im_Traffic_distance << endl;
-    // cout << endl << im_Sign_Edge << endl;
-    // for (int i = 0 ; i < 30; i++) {
-    //     for (int j = 0 ; j < 30; j++) {
-    //         cout << (int)im_Sign_Edge.at<uchar>(j,i) << " ";
-    //     }
-    //     cout << endl;
-    // }
+    Mat dist;
 
-    Mat_<float> im_Voting_Space(im_Traffic_distance.rows,im_Traffic_distance.cols,0.0);
-    cout << "size im_Traffic_distance: " << im_Traffic_distance.rows << ", " << im_Traffic_distance.cols << endl;
-    cout << "size im_Sign_Edge: " << im_Sign_Edge.rows << ", " << im_Sign_Edge.cols << endl;
-    cout << "size im_Voting_Space: " << im_Voting_Space.rows << ", " << im_Voting_Space.cols << endl;
-    // cout << im_Sign_Edge;
+    int distType = DIST_L2;
+    int maskSize = DIST_MASK_5;
 
-    // compute match score while sliding the image by pixel 
-    int x_c = im_Sign_Edge.cols / 2;
-    int y_c = im_Sign_Edge.rows / 2;
-    
-    
-    for (int y = 0; y < im_Traffic_distance.size().height - im_Sign_Edge.size().height; ++y) {
-        for (int x = 0; x < im_Traffic_distance.size().width - im_Sign_Edge.size().width; ++x) {
-            float score = 0;
-            for (int y1 = 0; y1 < im_Sign_Edge.size().height; ++y1) {
-                for (int x1 = 0; x1 < im_Sign_Edge.size().width; ++x1) {
-                    // cout << "x, y: " << x << ", " << y << " ";
-                    if ((int)im_Sign_Edge.at<uchar>(y1,x1) > 0) {
-                        score += im_Traffic_distance.at<float>(y+y1, x+x1) * (int)im_Sign_Edge.at<uchar>(y1,x1);
-                        // cout << "x1, y1:" << x1 <<" "<< y1 << " " << (int)im_Sign_Edge.at<uchar>(y1,x1) << ", " << im_Traffic_distance.at<float>(y+y1, x+x1) << endl;    
-                    }
-                }
-            }
-            // cout << "x, y: " << x << ", " << y << "  score: " << score << endl; 
-            im_Voting_Space.at<float>(y,x) = score;
-        }
-    }
-    imshow("voting space", im_Voting_Space);
-    cout << im_Voting_Space << endl;
-    waitKey(0);
-    
-    // minMaxLoc()
-    
+    Canny(im_Traffic_Gray, im_Edges, 10, 600, 3);
+    Canny(im_Sign_Gray, im_Sign, 10, 200, 3);
+
+    //imshow("Gray", im_Traffic_Gray);
+    //imshow("Canny", im_Edges);
+
+    distanceTransform(im_Edges, dist, distType, maskSize);
+
+    int rows = dist.rows;
+    int cols = dist.cols;
+    int r = im_Sign.rows;
+    int c = im_Sign.cols;
+
+    //imshow("Dist", dist);
+    //imshow("Canny sign", im_Sign);
+    Mat result;
+
+    cout << dist.type() << endl;
+    cout << im_Sign_Gray.type() << endl;
+
+    Mat newSign;
+    im_Sign_Gray.convertTo(newSign, 5);
+
+    cout << dist.type() << endl;
+    cout << newSign.type() << endl;
+
+    matchTemplate(dist, newSign, result, CV_TM_SQDIFF );
+    imshow("Result", result);
+
     // Show results
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
     // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
@@ -360,11 +401,9 @@ void part5()
 
 
 // Use this function for visualizations in part3
-
 void drawArrow(cv::Mat &image, cv::Point p, cv::Scalar color, double scaleMagnitude, double scaleArrowHead, double magnitube, double orientationDegrees)
 {
     int arrowHeadAngleCoeff = 10;
-
     magnitube *= scaleMagnitude;
 
     double theta = orientationDegrees * M_PI / 180; // rad
@@ -374,6 +413,7 @@ void drawArrow(cv::Mat &image, cv::Point p, cv::Scalar color, double scaleMagnit
 
     //Draw the principle line
     cv::line(image, p, q, color);
+
     //compute the angle alpha
     double angle = atan2((double)p.y-q.y, (double)p.x-q.x);
     //compute the coordinates of the first segment
@@ -381,13 +421,14 @@ void drawArrow(cv::Mat &image, cv::Point p, cv::Scalar color, double scaleMagnit
     p.y = (int) ( q.y + static_cast<int>(  round( scaleArrowHead * sin(angle + M_PI/arrowHeadAngleCoeff)) )  );
     //Draw the first segment
     cv::line(image, p, q, color);
+
     //compute the coordinates of the second segment
     p.x = (int) ( q.x + static_cast<int>(  round( scaleArrowHead * cos(angle - M_PI/arrowHeadAngleCoeff)) )  );
     p.y = (int) ( q.y + static_cast<int>(  round( scaleArrowHead * sin(angle - M_PI/arrowHeadAngleCoeff)) )  );
     //Draw the second segment
     cv::line(image, p, q, color);
-}
 
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -486,3 +527,96 @@ void buildLaplacianPyramid(vector<cv::Mat> gpyr, vector<cv::Mat> &lpyr) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void part5_shinho()
+{
+    std::cout << "/////////////////////////////////////////////////////" << std::endl;
+    std::cout << "/////////////////////////////////////////////////////" << std::endl;
+    std::cout << "////    Part 5    ///////////////////////////////////" << std::endl;
+    std::cout << "/////////////////////////////////////////////////////" << std::endl;
+    std::cout << "/////////////////////////////////////////////////////" << std::endl;
+    std::cout <<                                                            std::endl;
+
+    // Read image, Blur to denoise
+    cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
+    cv::GaussianBlur(im_Traffic_BGR, im_Traffic_BGR,  cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
+
+    // BGR to Gray
+    cv::Mat im_Traffic_Gray, im_Edges;
+    cv::cvtColor(im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY);
+
+    // Read Template
+    cv::Mat im_Sign_BGR = cv::imread("./images/sign.png");
+    cv::Mat im_Sign_Gray, im_Sign;
+    // BGR to Gray
+    cv::cvtColor( im_Sign_BGR, im_Sign_Gray, cv::COLOR_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
+    
+    Mat im_Traffic_Edge, im_Sign_Edge;
+    Mat im_Traffic_distance;
+    // Perform the steps described in the exercise sheet
+
+    Canny(im_Traffic_Gray, im_Traffic_Edge, 50, 200, 3, false );
+    resize(im_Sign_Gray, im_Sign_Gray, Size(70,60));    // rescale template image
+    Canny(im_Sign_Gray, im_Sign_Edge, 50, 150, 3, false );
+    
+    // imshow("traffic_gray", im_Traffic_Gray);
+    // imshow("traffic_edge", im_Traffic_Edge);
+    // imshow("sign_gray", im_Sign_Gray);
+    // imshow("sign_edge", im_Sign_Edge);
+    distanceTransform(im_Traffic_Edge, im_Traffic_distance, CV_DIST_L1, DIST_MASK_3);
+    // normalize(im_Traffic_distance, im_Traffic_distance, 0, 1., NORM_MINMAX);
+
+    imshow("traffic_distance", im_Traffic_distance);
+    // cout << im_Traffic_Edge.size().width << " " << im_Traffic_Edge.size().height << endl;
+    // cout << im_Sign_Edge.size().width << " " << im_Sign_Edge.size().height << endl;
+    // cout << endl << im_Traffic_Edge << endl;
+    // cout << endl << im_Traffic_distance << endl;
+    // cout << endl << im_Sign_Edge << endl;
+    // for (int i = 0 ; i < 30; i++) {
+    //     for (int j = 0 ; j < 30; j++) {
+    //         cout << (int)im_Sign_Edge.at<uchar>(j,i) << " ";
+    //     }
+    //     cout << endl;
+    // }
+
+    Mat_<float> im_Voting_Space(im_Traffic_distance.rows,im_Traffic_distance.cols,0.0);
+    cout << "size im_Traffic_distance: " << im_Traffic_distance.rows << ", " << im_Traffic_distance.cols << endl;
+    cout << "size im_Sign_Edge: " << im_Sign_Edge.rows << ", " << im_Sign_Edge.cols << endl;
+    cout << "size im_Voting_Space: " << im_Voting_Space.rows << ", " << im_Voting_Space.cols << endl;
+    // cout << im_Sign_Edge;
+
+    // compute match score while sliding the image by pixel 
+    int x_c = im_Sign_Edge.cols / 2;
+    int y_c = im_Sign_Edge.rows / 2;
+    
+    
+    for (int y = 0; y < im_Traffic_distance.size().height - im_Sign_Edge.size().height; ++y) {
+        for (int x = 0; x < im_Traffic_distance.size().width - im_Sign_Edge.size().width; ++x) {
+            float score = 0;
+            for (int y1 = 0; y1 < im_Sign_Edge.size().height; ++y1) {
+                for (int x1 = 0; x1 < im_Sign_Edge.size().width; ++x1) {
+                    // cout << "x, y: " << x << ", " << y << " ";
+                    if ((int)im_Sign_Edge.at<uchar>(y1,x1) > 0) {
+                        score += im_Traffic_distance.at<float>(y+y1, x+x1) * (int)im_Sign_Edge.at<uchar>(y1,x1);
+                        // cout << "x1, y1:" << x1 <<" "<< y1 << " " << (int)im_Sign_Edge.at<uchar>(y1,x1) << ", " << im_Traffic_distance.at<float>(y+y1, x+x1) << endl;    
+                    }
+                }
+            }
+            // cout << "x, y: " << x << ", " << y << "  score: " << score << endl; 
+            im_Voting_Space.at<float>(y,x) = score;
+        }
+    }
+    imshow("voting space", im_Voting_Space);
+    cout << im_Voting_Space << endl;
+    waitKey(0);
+    
+
+    // Show results
+    // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
+    // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
+    // If needed perform normalization of the image to be displayed
+
+    waitKey(0);
+    cv::destroyAllWindows();
+}
