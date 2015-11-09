@@ -19,7 +19,6 @@ void part2();
 void part3();
 void part4();
 void part5();
-void part5_shinho();
 
 void drawArrow(cv::Mat &image, cv::Point p, cv::Scalar color, double scaleMagnitude, double scaleArrowHead, double magnitube, double orientationDegrees);
 void matchingImage(Mat& img, Mat& matching, int y, int x, int rows, int cols);
@@ -41,11 +40,11 @@ int main(int argc, char* argv[])
 {
     // Uncomment the part of the exercise that you wish to implement.
     // For the final submission all implemented parts should be uncommented.
-    // part1();
-    // part2();
-    // part3();
-    // part4();
-    // part5();
+    part1();
+    part2();
+    part3();
+    part4();
+    part5();
     
     std::cout <<                                                            std::endl;
     std::cout << "/////////////////////////////////////////////////////" << std::endl;
@@ -104,14 +103,17 @@ void part1()
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
     // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
     displayPyramid(gpyr, "Gaussian Pyramid");
+    waitKey(0);
+    cv::destroyAllWindows();
     displayPyramid(myGpyr, "Custom Implemented Pyramid");
-
+    waitKey(0);
+    cv::destroyAllWindows();
+    
     // For the laplacian pyramid you should define your own container.
     // If needed perform normalization of the image to be displayed
     std::vector<cv::Mat>   lpyr;
-    buildLaplacianPyramid(gpyr, lpyr);
+    buildLaplacianPyramid(gpyr, lpyr);  // building laplacian pyramid
     displayPyramid(lpyr, "Laplacian Pyramid");
-
     cv::waitKey(0);
     cv::destroyAllWindows();    
 }
@@ -151,14 +153,14 @@ void part2()
     Mat_<float> mask(im_Apple.rows,im_Apple.cols,0.0); //mask matrix filled with 0 
     mask(Range::all(),Range(0,mask.cols/2)) = 1.0;    // fill left half with 1.0
     
-    Mat mask_3f;    // 3-channel mask image        
+    Mat mask_3f;    // use 3-channel mask image to multiply easier        
     cvtColor(mask, mask_3f, CV_GRAY2BGR); 
     
     vector<Mat> gpMask;   
 
     // Perform the blending using a Laplacian Pyramid
     
-    // Generate gaussian pyramids for apple and orange images.
+    // Generate gaussian pyramids for apple, orange and mask images
     buildGaussianPyramid(gpApple, im_Apple);
     buildGaussianPyramid(gpOrange, im_Orange);
     buildGaussianPyramid(gpMask, mask_3f);
@@ -185,7 +187,7 @@ void part2()
     // Show the blending results @ several layers
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
     // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
-    displayPyramid(lpBlend);
+    displayPyramid(lpBlend, "Blended Pyramid");
     waitKey(0);
     cv::destroyAllWindows();
 }
@@ -251,7 +253,6 @@ void part3()
     
     imshow("Magnitude", magnitude_);
     waitKey();
-    cv::destroyAllWindows();
     imshow("Angle", angle_);
     waitKey();
     cv::destroyAllWindows();
@@ -350,39 +351,41 @@ void part5()
     Mat im_Traffic_distance;
     // Perform the steps described in the exercise sheet
 
-    Mat dist;
+    Canny(im_Traffic_Gray, im_Traffic_Edge, 10, 600, 3, false );
+    resize(im_Sign_Gray, im_Sign_Gray, Size(70,60));    // rescale template image
+    Canny(im_Sign_Gray, im_Sign_Edge, 10, 200, 3, false );
 
-    int distType = DIST_L2;
-    int maskSize = DIST_MASK_5;
+    distanceTransform(im_Traffic_Edge, im_Traffic_distance, CV_DIST_L1, DIST_MASK_3);
+    
+    Mat im_Traffic_distance_normalize;
+    normalize(im_Traffic_distance, im_Traffic_distance_normalize, 0, 1., NORM_MINMAX);
+    
+    // display result images
+    imshow("Sign_Edge", im_Sign_Edge);
+    imshow("Traffic_distance_normalize", im_Traffic_distance_normalize);
+    waitKey(0);
 
-    Canny(im_Traffic_Gray, im_Edges, 10, 600, 3);
-    Canny(im_Sign_Gray, im_Sign, 10, 200, 3);
-
-    //imshow("Gray", im_Traffic_Gray);
-    //imshow("Canny", im_Edges);
-
-    distanceTransform(im_Edges, dist, distType, maskSize);
-
-    int rows = dist.rows;
-    int cols = dist.cols;
-    int r = im_Sign.rows;
-    int c = im_Sign.cols;
-
-    //imshow("Dist", dist);
-    //imshow("Canny sign", im_Sign);
-    Mat result;
-
-    cout << dist.type() << endl;
-    cout << im_Sign_Gray.type() << endl;
-
-    Mat newSign;
-    im_Sign_Gray.convertTo(newSign, 5);
-
-    cout << dist.type() << endl;
-    cout << newSign.type() << endl;
-
-    matchTemplate(dist, newSign, result, CV_TM_SQDIFF );
-    imshow("Result", result);
+    // compute match score while sliding the image by pixel 
+    Mat_<float> im_Voting_Space(im_Traffic_distance.rows,im_Traffic_distance.cols,0.0);
+    int x_c = im_Sign_Edge.cols / 2;
+    int y_c = im_Sign_Edge.rows / 2;
+    cout << "Start computing chamfer matching" << endl;
+    for (int y = 0; y < im_Traffic_distance.size().height - im_Sign_Edge.size().height; ++y) {
+        for (int x = 0; x < im_Traffic_distance.size().width - im_Sign_Edge.size().width; ++x) {
+            float score = 0;
+            for (int y1 = 0; y1 < im_Sign_Edge.size().height; ++y1) {
+                for (int x1 = 0; x1 < im_Sign_Edge.size().width; ++x1) {
+                    if ((int)im_Sign_Edge.at<uchar>(y1,x1) > 0) {
+                        score += im_Traffic_distance.at<float>(y+y1, x+x1) * (int)im_Sign_Edge.at<uchar>(y1,x1);
+                    }
+                }
+            }
+            im_Voting_Space.at<float>(y+y_c,x+x_c) = score;
+        }
+    }
+    cout << "End computing chamfer matching" << endl;
+    imshow("voting space", im_Voting_Space);
+    
 
     // Show results
     // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
@@ -445,8 +448,8 @@ void displayPyramid(vector<cv::Mat> pyr) {
 void displayPyramid(vector<cv::Mat> pyr, string title) {
     cout << title << endl; 
     for (int i = 0; i < pyr.size(); ++i ) {
-        cout << "Layer " << i << ":" << endl;
-        cout << "width: " << pyr[i].size().width << "  , height: " << pyr[i].size().height << endl;
+        // cout << "Layer " << i << ":" << endl;
+        // cout << "width: " << pyr[i].size().width << "  , height: " << pyr[i].size().height << endl;
         stringstream ess;
         ess << title << i;
         
@@ -528,95 +531,3 @@ void buildLaplacianPyramid(vector<cv::Mat> gpyr, vector<cv::Mat> &lpyr) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void part5_shinho()
-{
-    std::cout << "/////////////////////////////////////////////////////" << std::endl;
-    std::cout << "/////////////////////////////////////////////////////" << std::endl;
-    std::cout << "////    Part 5    ///////////////////////////////////" << std::endl;
-    std::cout << "/////////////////////////////////////////////////////" << std::endl;
-    std::cout << "/////////////////////////////////////////////////////" << std::endl;
-    std::cout <<                                                            std::endl;
-
-    // Read image, Blur to denoise
-    cv::Mat im_Traffic_BGR = cv::imread("./images/traffic.jpg");
-    cv::GaussianBlur(im_Traffic_BGR, im_Traffic_BGR,  cv::Size(3,3), 0, 0, cv::BORDER_DEFAULT );
-
-    // BGR to Gray
-    cv::Mat im_Traffic_Gray, im_Edges;
-    cv::cvtColor(im_Traffic_BGR, im_Traffic_Gray, cv::COLOR_BGR2GRAY);
-
-    // Read Template
-    cv::Mat im_Sign_BGR = cv::imread("./images/sign.png");
-    cv::Mat im_Sign_Gray, im_Sign;
-    // BGR to Gray
-    cv::cvtColor( im_Sign_BGR, im_Sign_Gray, cv::COLOR_BGR2GRAY ); // cv::COLOR_BGR2GRAY // CV_BGR2GRAY
-    
-    Mat im_Traffic_Edge, im_Sign_Edge;
-    Mat im_Traffic_distance;
-    // Perform the steps described in the exercise sheet
-
-    Canny(im_Traffic_Gray, im_Traffic_Edge, 50, 200, 3, false );
-    resize(im_Sign_Gray, im_Sign_Gray, Size(70,60));    // rescale template image
-    Canny(im_Sign_Gray, im_Sign_Edge, 50, 150, 3, false );
-    
-    // imshow("traffic_gray", im_Traffic_Gray);
-    // imshow("traffic_edge", im_Traffic_Edge);
-    // imshow("sign_gray", im_Sign_Gray);
-    // imshow("sign_edge", im_Sign_Edge);
-    distanceTransform(im_Traffic_Edge, im_Traffic_distance, CV_DIST_L1, DIST_MASK_3);
-    // normalize(im_Traffic_distance, im_Traffic_distance, 0, 1., NORM_MINMAX);
-
-    imshow("traffic_distance", im_Traffic_distance);
-    // cout << im_Traffic_Edge.size().width << " " << im_Traffic_Edge.size().height << endl;
-    // cout << im_Sign_Edge.size().width << " " << im_Sign_Edge.size().height << endl;
-    // cout << endl << im_Traffic_Edge << endl;
-    // cout << endl << im_Traffic_distance << endl;
-    // cout << endl << im_Sign_Edge << endl;
-    // for (int i = 0 ; i < 30; i++) {
-    //     for (int j = 0 ; j < 30; j++) {
-    //         cout << (int)im_Sign_Edge.at<uchar>(j,i) << " ";
-    //     }
-    //     cout << endl;
-    // }
-
-    Mat_<float> im_Voting_Space(im_Traffic_distance.rows,im_Traffic_distance.cols,0.0);
-    cout << "size im_Traffic_distance: " << im_Traffic_distance.rows << ", " << im_Traffic_distance.cols << endl;
-    cout << "size im_Sign_Edge: " << im_Sign_Edge.rows << ", " << im_Sign_Edge.cols << endl;
-    cout << "size im_Voting_Space: " << im_Voting_Space.rows << ", " << im_Voting_Space.cols << endl;
-    // cout << im_Sign_Edge;
-
-    // compute match score while sliding the image by pixel 
-    int x_c = im_Sign_Edge.cols / 2;
-    int y_c = im_Sign_Edge.rows / 2;
-    
-    
-    for (int y = 0; y < im_Traffic_distance.size().height - im_Sign_Edge.size().height; ++y) {
-        for (int x = 0; x < im_Traffic_distance.size().width - im_Sign_Edge.size().width; ++x) {
-            float score = 0;
-            for (int y1 = 0; y1 < im_Sign_Edge.size().height; ++y1) {
-                for (int x1 = 0; x1 < im_Sign_Edge.size().width; ++x1) {
-                    // cout << "x, y: " << x << ", " << y << " ";
-                    if ((int)im_Sign_Edge.at<uchar>(y1,x1) > 0) {
-                        score += im_Traffic_distance.at<float>(y+y1, x+x1) * (int)im_Sign_Edge.at<uchar>(y1,x1);
-                        // cout << "x1, y1:" << x1 <<" "<< y1 << " " << (int)im_Sign_Edge.at<uchar>(y1,x1) << ", " << im_Traffic_distance.at<float>(y+y1, x+x1) << endl;    
-                    }
-                }
-            }
-            // cout << "x, y: " << x << ", " << y << "  score: " << score << endl; 
-            im_Voting_Space.at<float>(y,x) = score;
-        }
-    }
-    imshow("voting space", im_Voting_Space);
-    cout << im_Voting_Space << endl;
-    waitKey(0);
-    
-
-    // Show results
-    // using **cv::imshow and cv::waitKey()** and when necessary **std::cout**
-    // In the end, after the last cv::waitKey(), use **cv::destroyAllWindows()**
-    // If needed perform normalization of the image to be displayed
-
-    waitKey(0);
-    cv::destroyAllWindows();
-}
