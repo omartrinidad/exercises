@@ -45,7 +45,7 @@ private:
 	float teacher;		//
 	float delta;		//
 	
-}
+};
 
 // Layer class
 class Layer {
@@ -53,12 +53,13 @@ class Layer {
 	int num_neurons;		// number of neurons in the layer
 	Transferfunction tf;	// transfer function of neurons in the layer 
 	float learningRate; 	// Learning Rate - BP 
-}
+};
+
 // Weights class
 class Weights {
 	float **weights;
 	float **weight_changes;
-}
+};
 
 void constructMLP();	// construct MLP
 void initWeights();		// initialize weights
@@ -68,13 +69,13 @@ void validation();		// validate performance using test.dat file
 
 /////============================
 // Declare MLP components class
-public Layer L_X;	
-public Layer L_H1;
-public Layer L_H2;
-public Layer L_Y;
-public Weights W_XtoH;
-public Weights W_HtoH;
-public Weights W_HtoY;
+Layer L_X;	
+Layer L_H1;
+Layer L_H2;
+Layer L_Y;
+Weights W_XtoH;
+Weights W_HtoH;
+Weights W_HtoY;
 
 /////============================
 int main(int argc, char** argv) {
@@ -85,10 +86,10 @@ int main(int argc, char** argv) {
 
 void constructMLP() {
 	// Initialize neurons in each layer using classes
-	// the number of layers and the number of neurons 
-	// should be set as the defined numbers
-	
-	
+    // the number of layers and the number of neurons 
+    // should be set as the defined numbers
+    L_X = Layer();
+    // cout << L_X << endl;
 }
 
 void initWeights() {
