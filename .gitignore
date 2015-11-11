@@ -33,4 +33,3 @@ Makefile
 cmake_install.cmake
 __MACOSX/
 CMakeCache.txt
-CMakeLists.txt

@@ -35,31 +35,89 @@ using namespace std;
 #define TRAINING_PATTERN 1000 // number of training patterns up to 1000  												 
 //=====================
 
-
 enum Transferfunction { TANH, LOGISTIC, IDENTITY };
+
 // Neuron class
 class Neuron {
-private:
-	float net_val;		// weighted sum of inputs to this neuron
-	float output;		// output value of the neuron which indicates f(net_val)
-	float teacher;		//
-	float delta;		//
-	
+    public:
+        float net_val;		// weighted sum of inputs to this neuron
+        float output;		// output value of the neuron which indicates f(net_val)
+        float teacher;		//
+        float delta;		//
+        
+        /* constructor  definition */
+        Neuron() {
+            net_val = 0.0;
+            delta = 0.0;
+            output = 0.0;
+            teacher = 0.0;
+        }
 };
+
 
 // Layer class
 class Layer {
-	Neuron *neurons;		// neurons in the layer 
-	int num_neurons;		// number of neurons in the layer
-	Transferfunction tf;	// transfer function of neurons in the layer 
-	float learningRate; 	// Learning Rate - BP 
+    public:
+        Neuron *neurons;		// neurons in the layer 
+        int num_neurons;		// number of neurons in the layer
+        Transferfunction tf;	// transfer function of neurons in the layer 
+        float learningRate; 	// Learning Rate - BP 
+
+        /* constructors declaration */
+        Layer();
+        Layer(int num_neurons);
 };
+
+
+/* constructors definition */
+Layer::Layer() { } 
+
+Layer::Layer(int init) {
+
+    Neuron *neurons[init];
+    num_neurons = init;
+    // Transferfunction = new Transferfunction();
+    // learningRate = 0.0;
+
+    for (int i = 0; i < init; i++) {
+        neurons[i] = new Neuron();
+    }
+}
+
 
 // Weights class
 class Weights {
-	float **weights;
-	float **weight_changes;
+
+    public:
+        float **weights;
+        float **weight_changes;
+
+        /* constructors definition */
+        Weights(){ }
+
+        Weights(int H, int M) {
+
+            srand(RND_SEED);
+            weights = new float*[H];
+            weight_changes = new float*[H];
+
+            for (int h = 0; h < H; h++) {
+                weights[h] = new float[M];
+                weight_changes[h] = new float[M];
+            }
+
+            for (int h = 0; h < H; h++) {
+                for (int m = 0; m < M; m++) {
+                    weights[h][m] = (float) rand()/RAND_MAX - 2.0;
+                    weight_changes[h][m] = 0;
+                    //cout << weights[h][m] << "\t";
+                }
+                //cout << "\n------------" << "";
+                //cout << "" << endl;
+            }
+        }
 };
+
 
 void constructMLP();	// construct MLP
 void initWeights();		// initialize weights
@@ -88,13 +146,21 @@ void constructMLP() {
 	// Initialize neurons in each layer using classes
     // the number of layers and the number of neurons 
     // should be set as the defined numbers
-    L_X = Layer();
-    // cout << L_X << endl;
+    
+    L_X = Layer(N_INPUT);
+    L_H1 = Layer(H1_HIDDEN);
+    L_H2 = Layer(H2_HIDDEN);
+    L_Y = Layer(M_OUTPUT);
+
 }
 
 void initWeights() {
+
 	// Initialize weights
 	// Weight values should be -2.0 < w < +2.0 random numbers using RND_SEED
+    Weights W_XtoH = Weights(N_INPUT, H1_HIDDEN);
+    Weights W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
+    Weights W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);
 	 
 }
 
