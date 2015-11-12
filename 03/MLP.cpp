@@ -46,7 +46,7 @@ class Neuron {
         float delta;		//
         
         /* constructor  definition */
-        Neuron() {
+		Neuron() {
             net_val = 0.0;
             delta = 0.0;
             output = 0.0;
@@ -149,19 +149,24 @@ void constructMLP() {
     
     L_X = Layer(N_INPUT);
     L_H1 = Layer(H1_HIDDEN);
-    L_H2 = Layer(H2_HIDDEN);
+	if (LAYER_NUM == 4){
+		L_H2 = Layer(H2_HIDDEN);	
+	}
     L_Y = Layer(M_OUTPUT);
-
 }
 
 void initWeights() {
-
 	// Initialize weights
 	// Weight values should be -2.0 < w < +2.0 random numbers using RND_SEED
     Weights W_XtoH = Weights(N_INPUT, H1_HIDDEN);
-    Weights W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
-    Weights W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);
-	 
+	if (LAYER_NUM == 4) {
+		Weights W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
+		Weights W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);	
+	}
+	if (LAYER_NUM == 3) {
+		Weights W_HtoY = Weights(H1_HIDDEN, M_OUTPUT);
+	}
+    
 }
 
 void verifyDataFile() {
