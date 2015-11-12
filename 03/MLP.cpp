@@ -32,34 +32,30 @@ using namespace std;
 						// this value is valid only when LAYER_NUM is 4.
 #define RND_SEED 5      // seed for Random number generator 
 						// Weight values are initialized refer to the seed
-#define TRAINING_PATTERN 1000 // number of training patterns up to 1000  												 
+#define MAX_TRAINING_PATTERN 1000 // number of training patterns up to 1000  												 
+//=====================
+
+//=====================
+// helper functions - split str
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        //if (!item.empty()) {
+			elems.push_back(item);
+		//}
+    }
+    return elems;
+}
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
 //=====================
 
 
-enum Transferfunction { TANH, LOGISTIC, IDENTITY };
-// Neuron class
-class Neuron {
-private:
-	float net_val;		// weighted sum of inputs to this neuron
-	float output;		// output value of the neuron which indicates f(net_val)
-	float teacher;		//
-	float delta;		//
-	
-}
-
-// Layer class
-class Layer {
-	Neuron *neurons;		// neurons in the layer 
-	int num_neurons;		// number of neurons in the layer
-	Transferfunction tf;	// transfer function of neurons in the layer 
-	float learningRate; 	// Learning Rate - BP 
-}
-// Weights class
-class Weights {
-	float **weights;
-	float **weight_changes;
-}
-
+//=====================
 void constructMLP();	// construct MLP
 void initWeights();		// initialize weights
 void verifyDataFile(); 	// verify given training.dat file and test.dat file 
@@ -68,18 +64,28 @@ void validation();		// validate performance using test.dat file
 
 /////============================
 // Declare MLP components class
-public Layer L_X;	
-public Layer L_H1;
-public Layer L_H2;
-public Layer L_Y;
-public Weights W_XtoH;
-public Weights W_HtoH;
-public Weights W_HtoY;
+
+string trainingFileName;
+string testFileName;
+float trainingPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
+float trainingPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
+float testPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
+float testPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
 
 /////============================
 int main(int argc, char** argv) {
-	constructMLP();
-	initWeights(); 
+    try {	
+        trainingFileName = argv[1];
+        testFileName = argv[2];
+        //constructMLP();
+        //initWeights(); 
+        
+        verifyDataFile();
+    } catch(const exception& e) {
+        cerr << e.what();
+    } catch(const string& msg) {
+        cerr << endl << "Error: " << msg << endl;
+    }
 	return 0;
 } 
 
@@ -88,6 +94,7 @@ void constructMLP() {
 	// the number of layers and the number of neurons 
 	// should be set as the defined numbers
 	
+	// -- Omar will work on this
 	
 }
 
@@ -95,14 +102,49 @@ void initWeights() {
 	// Initialize weights
 	// Weight values should be -2.0 < w < +2.0 random numbers using RND_SEED
 	 
+	// -- Omar will work on this
 }
 
 void verifyDataFile() {
 	// // verify given training.dat file and test.dat file
-	// - check the number of input and teach values each line
+	// - ignore header lines (commented lines)
+	// - check the number of input and teacher values each line
 	// - check if there is no blank line
 	// - check if the number of pattern is more than defined number
-	// - check header line (2 lines) 
+	
+	ifstream trainingFile(trainingFileName);   // read training data file
+    
+    if ( !trainingFile.eof() ) {
+        int p_cnt = 0;
+        int comment_cnt = 0;
+    	string line;
+        
+        while(getline(trainingFile, line)) {
+			if (line[0] == '#') {
+				// ingnore comment line
+				comment_cnt++;
+				continue;
+			}
+			// parse a line
+			vector<std::string> values = split(line, ' ');
+			
+			// store data into array
+			bool b_input = true;
+			for (int i =0; i < values.size(); ++i) {
+				if (values[i].empty()){
+					
+				}  
+				cout << values[i] << ",";
+			}	
+			cout << endl;
+			p_cnt++;
+        }
+	}
+        //testPatters[][]
+    	//float testPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
+		//float testPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
+        
+	// -- Shinho will work on this 
 }
 
 void training() {
@@ -113,7 +155,7 @@ void training() {
 	// Calculate the error in every training step, 
 	// and print it as a learning curve into a file learning.curve during the training process. 
 	// Choose a format that can easily be depicted using the freely available program gnuplot.
-	  
+	
 }
 
 void validation() {
