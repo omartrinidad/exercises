@@ -35,15 +35,14 @@ using namespace std;
 #define MAX_TRAINING_PATTERN 1000 // number of training patterns up to 1000  												 
 //=====================
 
+
 //=====================
 // helper functions - split str
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+std::vector<std::string> split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
-        //if (!item.empty()) {
-			elems.push_back(item);
-		//}
+        elems.push_back(item);
     }
     return elems;
 }
@@ -54,6 +53,96 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 //=====================
 
+enum Transferfunction { TANH, LOGISTIC, IDENTITY };
+
+// Neuron class
+class Neuron {
+    public:
+        float net_val;		// weighted sum of inputs to this neuron
+        float output;		// output value of the neuron which indicates f(net_val)
+        float teacher;		//
+        float delta;		//
+        
+        /* constructor  definition */
+		Neuron() {
+            net_val = 0.0;
+            delta = 0.0;
+            output = 0.0;
+            teacher = 0.0;
+        }
+};
+
+enum Layer_Category{INPUT, HIDDEN, OUTPUT};
+// Layer class
+class Layer {
+    public:
+        Neuron *neurons;		// neurons in the layer 
+        int num_neurons;		// number of neurons in the layer
+        Transferfunction tf;	// transfer function of neurons in the layer 
+        float learningRate; 	// Learning Rate - BP
+        Layer_Category lc;
+        
+        /* constructors declaration */
+        Layer();
+        Layer(int num_neurons);
+        setTF(Transferfunction _tf){
+            tf = _tf;  
+        };
+        setLearningRate(float _lr){
+            learningRate = _lr;
+        };
+        setLayerCategory(Layer_Category _lc) {
+            lc = _lc;
+        }
+};
+
+
+/* constructors definition */
+Layer::Layer() { } 
+
+Layer::Layer(int init) {
+    Neuron *neurons[init];
+    num_neurons = init;
+
+    for (int i = 0; i < init; i++) {
+        neurons[i] = new Neuron();
+    }
+}
+
+
+// Weights class
+class Weights {
+
+    public:
+        float **weights;
+        float **weight_changes;
+
+        /* constructors definition */
+        Weights(){ }
+
+        Weights(int X, int Y) {
+            X = X+1;    // add BIAS
+            srand(RND_SEED); // random seed
+            
+            weights = new float*[X];
+            weight_changes = new float*[X];
+
+            for (int x = 0; x < X; x++) {
+                weights[x] = new float[Y];
+                weight_changes[x] = new float[Y];
+            }
+
+            for (int x = 0; x < X; x++) {
+                for (int y = 0; y < Y; y++) {
+                    weights[x][y] = (float) rand()/RAND_MAX - 2.0;
+                    weight_changes[x][y] = 0;
+                    //cout << weights[h][m] << "\t";
+                }
+                //cout << "\n------------" << "";
+                //cout << "" << endl;
+            }
+        }
+};
 
 //=====================
 void constructMLP();	// construct MLP
@@ -62,25 +151,49 @@ void verifyDataFile(); 	// verify given training.dat file and test.dat file
 void training();		// training using training.dat file 
 void validation();		// validate performance using test.dat file 
 
+void initNeuron(Layer l, float* pattern);
+void calcOutput(Layer l_Pre, Layer l_Next, Weights w);    // calculate weighted sum and ouput in terms of neurons in the layer
+float calcTransferFunction(float net, Transferfunction tf) { return 1.0 }; // calculation of the result of transfer function
+
+void calcError(Layer l); // calculate error of the output layer using quadratic differences
+void printGNUPlotForm(string fileName, float error); // print error into GNUplot form
+
+void calcDelta_Hidden(Layer l_Pre, Layer l_Next, Weights w);
+void calcDelta_OutputLayer(Layer l);
+float calcDerivationTF(Transferfunction tf, float net_val);
+
+void calcWeightchanges(Weights w, Layer l_Pre, Layer l_Next);
+void updateWeights(Weights w);
 /////============================
 // Declare MLP components class
 
+Layer L_X;	
+Layer L_H1;
+Layer L_H2;
+Layer L_Y;
+Weights W_XtoH;
+Weights W_HtoH;
+Weights W_HtoY;
+
 string trainingFileName;
 string testFileName;
-float trainingPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
-float trainingPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
-float testPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
-float testPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
+float trainingPatterns_Input[ MAX_TRAINING_PATTERN ][ N_INPUT ];
+float trainingPatterns_Teacher[ MAX_TRAINING_PATTERN ][ M_OUTPUT ];
+float testPatterns_Input[ MAX_TRAINING_PATTERN ][ N_INPUT ];
+float testPatterns_Teacher[ MAX_TRAINING_PATTERN ][ M_OUTPUT ];
+int p_cnt = 0;
+int p_test_cnt = 0;
 
 /////============================
 int main(int argc, char** argv) {
     try {	
         trainingFileName = argv[1];
         testFileName = argv[2];
-        //constructMLP();
-        //initWeights(); 
         
+        constructMLP();
+        initWeights(); 
         verifyDataFile();
+        
     } catch(const exception& e) {
         cerr << e.what();
     } catch(const string& msg) {
@@ -91,18 +204,35 @@ int main(int argc, char** argv) {
 
 void constructMLP() {
 	// Initialize neurons in each layer using classes
-	// the number of layers and the number of neurons 
-	// should be set as the defined numbers
-	
-	// -- Omar will work on this
-	
+    // the number of layers and the number of neurons 
+    // should be set as the defined numbers
+    
+    L_X = Layer(N_INPUT);
+    L_H1 = Layer(H1_HIDDEN);
+    L_H1 -> setTF(TANH);
+    L_H1 -> setLearningRate(0.5);
+    
+	if (LAYER_NUM == 4){
+		L_H2 = Layer(H2_HIDDEN);
+        L_H2 -> setTF(TANH);	
+        L_H2 -> setLearningRate(0.5);
+	}
+    L_Y = Layer(M_OUTPUT);
+    L_Y -> setTF(TANH);
+    L_Y -> setLearningRate(0.5);
 }
 
 void initWeights() {
 	// Initialize weights
 	// Weight values should be -2.0 < w < +2.0 random numbers using RND_SEED
-	 
-	// -- Omar will work on this
+    Weights W_XtoH = Weights(N_INPUT, H1_HIDDEN);
+	if (LAYER_NUM == 4) {
+		Weights W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
+		Weights W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);	
+	}
+	if (LAYER_NUM == 3) {
+		Weights W_HtoY = Weights(H1_HIDDEN, M_OUTPUT);
+	}    
 }
 
 void verifyDataFile() {
@@ -115,7 +245,6 @@ void verifyDataFile() {
 	ifstream trainingFile(trainingFileName);   // read training data file
     
     if ( !trainingFile.eof() ) {
-        int p_cnt = 0;
         int comment_cnt = 0;
     	string line;
         
@@ -130,21 +259,87 @@ void verifyDataFile() {
 			
 			// store data into array
 			bool b_input = true;
+            int index = 0;
 			for (int i =0; i < values.size(); ++i) {
 				if (values[i].empty()){
-					
-				}  
-				cout << values[i] << ",";
+					if (b_input) index = 0;
+                    b_input = false;
+                    //cout << "empty" << endl;
+                    continue;
+				}
+                //cout << i << " ";
+                if (b_input)  
+                    trainingPatterns_Input[p_cnt][index++] = stof(values[i]);
+                else trainingPatterns_Teacher[p_cnt][index++] = stof(values[i]);
+				//cout << values[i] << ",";
 			}	
-			cout << endl;
+			//cout << endl;
 			p_cnt++;
         }
 	}
-        //testPatters[][]
-    	//float testPatters_Input[MAX_TRAINING_PATTERN][N_INPUT];
-		//float testPatters_Teacher[MAX_TRAINING_PATTERN][M_OUTPUT];
+    trainingFile.close();
+    for (int i=0; i < p_cnt; i++) {//sizeof(trainingPatterns_Input); i++) {
+        for (int j=0; j < N_INPUT; j++) {
+            cout << trainingPatterns_Input[i][j] << " ";
+        }
+        cout << endl;
+    }
+    cout << endl << endl;
+    for (int i=0; i < p_cnt; i++) {
+        for (int j=0; j < M_OUTPUT; j++) {
+            cout << trainingPatterns_Teacher[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+	ifstream testFile(testFileName);   // read training data file
+    
+    if ( !testFile.eof() ) {
+        int comment_cnt = 0;
+    	string line;
         
-	// -- Shinho will work on this 
+        while(getline(testFile, line)) {
+			if (line[0] == '#') {
+				// ingnore comment line
+				comment_cnt++;
+				continue;
+			}
+			// parse a line
+			vector<std::string> values = split(line, ' ');
+			
+			// store data into array
+			bool b_input = true;
+            int index = 0;
+			for (int i =0; i < values.size(); ++i) {
+				if (values[i].empty()){
+					if (b_input) index = 0;
+                    b_input = false;
+                    continue;
+				}
+                // cout << i << " ";
+                if (b_input)  
+                    testPatterns_Input[p_test_cnt][index++] = stof(values[i]);
+                else testPatterns_Teacher[p_test_cnt][index++] = stof(values[i]);
+				// cout << values[i] << ",";
+			}	
+			cout << endl;
+			p_test_cnt++;
+        }
+	}
+    testFile.close();
+    for (int i=0; i < p_test_cnt; i++) {//sizeof(trainingPatterns_Input); i++) {
+        for (int j=0; j < N_INPUT; j++) {
+            cout << testPatterns_Input[i][j] << " ";
+        }
+        cout << endl;
+    }
+    cout << endl << endl;
+    for (int i=0; i < p_test_cnt; i++) {
+        for (int j=0; j < M_OUTPUT; j++) {
+            cout << testPatterns_Teacher[i][j] << " ";
+        }
+        cout << endl;
+    }	 
 }
 
 void training() {
@@ -156,10 +351,75 @@ void training() {
 	// and print it as a learning curve into a file learning.curve during the training process. 
 	// Choose a format that can easily be depicted using the freely available program gnuplot.
 	
+    // 1. pick a pattern
+    for (int p = 0 ; p < p_cnt; ++p) {
+        // 1. put training pattern input and teacher values into neurons
+        //trainingPatterns_Input[p]
+        initNeuron(L_X, trainingPatterns_Input[p]);
+        initNeuron(L_Y, trainingPatterns_Teacher[p]);
+        
+        // 2. calculate weighted sum and output of each neuron
+        // using weighted sum
+        // using transfer function
+        // save result into neuron object
+        calcOutput(L_X, L_H1, W_XtoH);
+        if (LAYER_NUM == 3) {
+            calcOutput(L_H1, L_Y, W_HtoY);
+        } else if (LAYER_NUM ==4) {
+            calcOutput(L_H1, L_H2, W_HtoH);
+            calcOutput(L_H2, L_Y, W_HtoY);
+        }
+        
+        // 4. calculate error - using error function "sum of quadratic differences" and print it as a learning curve 
+        calcError(L_Y);
+        
+        // 5. calculate delta value - output
+        calcDelta_OutputLayer(L_Y);
+        // 6. calculate delta value - H2
+        // 7. calculate delta value - H1
+        if (LAYER_NUM == 3) {
+            calcDelta_Hidden(L_H1, L_Y, W_HtoY);
+        } else if (LAYER_NUM == 4) {
+            calcDelta_Hidden(L_H2, L_Y, W_HtoY);
+            calcDelta_Hidden(L_H1, L_H2, W_HtoH);
+        }
+
+
+        //    calculate weight changes
+        if (LAYER_NUM == 3) {
+            calcWeightchanges(W_HtoY, L_H1, L_Y);
+            calcWeightchanges(W_XtoH, L_X, L_H1);
+        } else if (LAYER_NUM == 4) {
+            calcWeightchanges(W_HtoY, L_H2, L_Y);
+            calcWeightchanges(W_HtoH, L_H1, L_H2);
+            calcWeightchanges(W_XtoH, L_X, L_H1);
+        }
+        // 8. Update all weights
+        updateWeights(W_XtoH);
+        if (LAYER_NUM == 4) { 
+            updateWeights(W_HtoH);
+        }
+        updateWeights(W_HtoY);
+    
+    }
+    
+    
+    
 }
 
 void validation() {
 	// read test data
 	// write the performance result to file
-	
+    // 1. pick a pattern
+    // for (....)
+    
+    // 2. calculate weighted sum and output of each neuron
+    // using weighted sum
+    // using transfer function
+    // save result into neuron object
+    
+    // 3. comparing output and teacher value
+    
+    // 4. calculate error - using error function "sum of quadratic differences" and print it as a learning curve 
+    
 }
