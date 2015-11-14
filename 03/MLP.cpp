@@ -137,13 +137,11 @@ class Weights {
 
             for (int x = 0; x < X; x++) {
                 for (int y = 0; y < Y; y++) {
-                    weights[x][y] = (float) rand()/RAND_MAX - 2.0;
-                    //cout << weights[x][y] << " ";
+                    weights[x][y] = ((float(rand()) / float(RAND_MAX)) * (2 - -2)) + -2;
+                    cout << weights[x][y] << " ";
                     weight_changes[x][y] = 0;
-                    //cout << weights[h][m] << "\t";
                 }
-                //cout << "\n------------" << "";
-                //cout << "" << endl;
+                cout << "" << endl;
             }
         }
 };
@@ -382,6 +380,7 @@ void training() {
         
         // 4. calculate error - using error function "sum of quadratic differences" and print it as a learning curve 
         float error = calcError(L_Y);
+        //cout << "error " << error << endl;
 
         /*
         // 5. calculate delta value - output
@@ -444,7 +443,6 @@ void initNeuron(Layer l, float* pattern){
 
 void initTeacher(Layer l, float* pattern){
 
-    /* watch for BIAS */
     for (int i = 1; i < l.num_neurons + 1; ++i) {
         l.neurons[i].teacher = pattern[i-1];
     }
@@ -456,15 +454,25 @@ void calcOutput(Layer pre, Layer next, Weights w) {
     //cout << "" << endl;
     //cout << pre.num_neurons << endl;
 
-    for (int i = 1; i < pre.num_neurons + 1; i++) {
-        for (int j = 0; j < next.num_neurons; j++) {
+    cout << w.weights[0][0] << "\n" ;
 
-            //cout << w.weights[i][j] << " * " << pre.neurons[i].output << "    ";
-            next.neurons[j].net_val += w.weights[i][j] * pre.neurons[i].output;
-
-        }
-        //cout << " " << "\n\n";
+    /* bias */
+    for (int j = 0; j < next.num_neurons; j++) {
+        cout << "(" << 0 << " " << j << ") " << w.weights[0][j] << " * 1 ";
+        next.neurons[j].net_val += w.weights[0][j];
     }
+    cout << " " << "\n";
+
+    for (int i = 1; i < pre.num_neurons + 1; i++) {
+        cout << " -------------> " << i << endl;
+        for (int j = 0; j < next.num_neurons; j++) {
+            cout << "(" << i << " " << j << ") " << w.weights[i][j] << " * " << pre.neurons[i].output << "  ";
+            next.neurons[j].net_val += w.weights[i][j] * pre.neurons[i].output;
+        }
+        cout << " " << "\n";
+    }
+
+    cout << "-----------------------------------> " << endl;
 
     for (int j = 0; j < next.num_neurons; j++) {
         next.neurons[j].output =\
@@ -475,7 +483,9 @@ void calcOutput(Layer pre, Layer next, Weights w) {
 float calcTransferFunction(float net, Transferfunction tf){
 
     /* only logistic function now */
+    cout << "net  " << net << endl;
     float result = 1 /(1 + exp(-net));
+    cout << result << endl;
     return result;
 
 }
@@ -488,8 +498,9 @@ float calcError(Layer l) {
     for (int i = 1; i < l.num_neurons + 1; ++i) {
         sum += l.neurons[i].teacher - l.neurons[i].output;
     }
-
     error = 0.5 * pow(sum, 4);
+
+    cout << error << endl;
 
 } 
 
