@@ -27,9 +27,11 @@
 *.out
 *.app
 
-# Ignore
+# nested folders
+bin/
 CMakeFiles/
-Makefile
-cmake_install.cmake
-__MACOSX/
+images/
+*.cmake
 CMakeCache.txt
+Makefile
+Sheet[0-9][0-9].pdf
