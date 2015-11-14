@@ -85,13 +85,15 @@ class Layer {
         /* constructors declaration */
         Layer();
         Layer(int num_neurons);
-        setTF(Transferfunction _tf){
+
+        /* methods definition */
+        void setTF(Transferfunction _tf){
             tf = _tf;  
         };
-        setLearningRate(float _lr){
+        void setLearningRate(float _lr){
             learningRate = _lr;
         };
-        setLayerCategory(Layer_Category _lc) {
+        void setLayerCategory(Layer_Category _lc) {
             lc = _lc;
         }
 };
@@ -153,7 +155,7 @@ void validation();		// validate performance using test.dat file
 
 void initNeuron(Layer l, float* pattern);
 void calcOutput(Layer l_Pre, Layer l_Next, Weights w);    // calculate weighted sum and ouput in terms of neurons in the layer
-float calcTransferFunction(float net, Transferfunction tf) { return 1.0 }; // calculation of the result of transfer function
+float calcTransferFunction(float net, Transferfunction tf); // calculation of the result of transfer function
 
 void calcError(Layer l); // calculate error of the output layer using quadratic differences
 void printGNUPlotForm(string fileName, float error); // print error into GNUplot form
@@ -209,17 +211,17 @@ void constructMLP() {
     
     L_X = Layer(N_INPUT);
     L_H1 = Layer(H1_HIDDEN);
-    L_H1 -> setTF(TANH);
-    L_H1 -> setLearningRate(0.5);
+    L_H1.setTF(TANH);
+    L_H1.setLearningRate(0.5);
     
 	if (LAYER_NUM == 4){
 		L_H2 = Layer(H2_HIDDEN);
-        L_H2 -> setTF(TANH);	
-        L_H2 -> setLearningRate(0.5);
+        L_H2.setTF(TANH);	
+        L_H2.setLearningRate(0.5);
 	}
     L_Y = Layer(M_OUTPUT);
-    L_Y -> setTF(TANH);
-    L_Y -> setLearningRate(0.5);
+    L_Y.setTF(TANH);
+    L_Y.setLearningRate(0.5);
 }
 
 void initWeights() {
@@ -352,12 +354,15 @@ void training() {
 	// Choose a format that can easily be depicted using the freely available program gnuplot.
 	
     // 1. pick a pattern
-    for (int p = 0 ; p < p_cnt; ++p) {
+
+    //for (int p = 0 ; p < p_cnt; ++p) {
         // 1. put training pattern input and teacher values into neurons
         //trainingPatterns_Input[p]
-        initNeuron(L_X, trainingPatterns_Input[p]);
-        initNeuron(L_Y, trainingPatterns_Teacher[p]);
-        
+        //
+        //initNeuron(L_X, trainingPatterns_Input[p]);
+        //initNeuron(L_Y, trainingPatterns_Teacher[p]);
+       
+        /*
         // 2. calculate weighted sum and output of each neuron
         // using weighted sum
         // using transfer function
@@ -384,7 +389,6 @@ void training() {
             calcDelta_Hidden(L_H1, L_H2, W_HtoH);
         }
 
-
         //    calculate weight changes
         if (LAYER_NUM == 3) {
             calcWeightchanges(W_HtoY, L_H1, L_Y);
@@ -400,10 +404,8 @@ void training() {
             updateWeights(W_HtoH);
         }
         updateWeights(W_HtoY);
-    
-    }
-    
-    
+        */
+    //}
     
 }
 
@@ -423,3 +425,22 @@ void validation() {
     // 4. calculate error - using error function "sum of quadratic differences" and print it as a learning curve 
     
 }
+
+/* ToDo */
+void initNeuron(Layer l, float* pattern){};
+void calcOutput(Layer l_Pre, Layer l_Next, Weights w){};
+float calcTransferFunction(float net, Transferfunction tf){
+    return 0.0;
+}
+
+void calcError(Layer l){}; 
+void printGNUPlotForm(string fileName, float error){};
+
+void calcDelta_Hidden(Layer l_Pre, Layer l_Next, Weights w){};
+void calcDelta_OutputLayer(Layer l){};
+float calcDerivationTF(Transferfunction tf, float net_val){
+    return 0.0;
+}
+
+void calcWeightchanges(Weights w, Layer l_Pre, Layer l_Next){};
+void updateWeights(Weights w){};
