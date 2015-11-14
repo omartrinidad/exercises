@@ -24,11 +24,11 @@ using namespace std;
 
 //=====================
 // Setting Area
-#define LAYER_NUM 4		// 3: N-H-M , 4: N-H1-H2-M
+#define LAYER_NUM 3		// 3: N-H-M , 4: N-H1-H2-M
 #define N_INPUT 4       // Number of neurons in input layer (1 < n <=1000)
 #define M_OUTPUT 2      // Number of neurons in output layer (1 < m <= 1000)
-#define H1_HIDDEN 30   	// Number of neurons in first hidden layer (1 < h1 <=1000)
-#define H2_HIDDEN 30   	// Number of neurons in second hidden layer (1 < h2 <= 1000) 
+#define H1_HIDDEN 3//30   	// Number of neurons in first hidden layer (1 < h1 <=1000)
+#define H2_HIDDEN 3//30   	// Number of neurons in second hidden layer (1 < h2 <= 1000) 
 						// this value is valid only when LAYER_NUM is 4.
 #define RND_SEED 5      // seed for Random number generator 
 						// Weight values are initialized refer to the seed
@@ -123,7 +123,8 @@ class Weights {
         Weights(){ }
 
         Weights(int X, int Y) {
-            X = X+1;    // add BIAS
+
+            X = X + 1;    // add BIAS
             srand(RND_SEED); // random seed
             
             weights = new float*[X];
@@ -136,12 +137,11 @@ class Weights {
 
             for (int x = 0; x < X; x++) {
                 for (int y = 0; y < Y; y++) {
-                    weights[x][y] = (float) rand()/RAND_MAX - 2.0;
+                    weights[x][y] = ((float(rand()) / float(RAND_MAX)) * (2 - -2)) + -2;
+                    cout << weights[x][y] << " ";
                     weight_changes[x][y] = 0;
-                    //cout << weights[h][m] << "\t";
                 }
-                //cout << "\n------------" << "";
-                //cout << "" << endl;
+                cout << "" << endl;
             }
         }
 };
@@ -154,10 +154,11 @@ void training();		// training using training.dat file
 void validation();		// validate performance using test.dat file 
 
 void initNeuron(Layer l, float* pattern);
+void initTeacher(Layer l, float* pattern);
 void calcOutput(Layer l_Pre, Layer l_Next, Weights w);    // calculate weighted sum and ouput in terms of neurons in the layer
 float calcTransferFunction(float net, Transferfunction tf); // calculation of the result of transfer function
 
-void calcError(Layer l); // calculate error of the output layer using quadratic differences
+float calcError(Layer l); // calculate error of the output layer using quadratic differences
 void printGNUPlotForm(string fileName, float error); // print error into GNUplot form
 
 void calcDelta_Hidden(Layer l_Pre, Layer l_Next, Weights w);
@@ -173,6 +174,7 @@ Layer L_X;
 Layer L_H1;
 Layer L_H2;
 Layer L_Y;
+
 Weights W_XtoH;
 Weights W_HtoH;
 Weights W_HtoY;
@@ -189,12 +191,13 @@ int p_test_cnt = 0;
 /////============================
 int main(int argc, char** argv) {
     try {	
+
         trainingFileName = argv[1];
         testFileName = argv[2];
-        
+        verifyDataFile();
         constructMLP();
         initWeights(); 
-        verifyDataFile();
+        training();
         
     } catch(const exception& e) {
         cerr << e.what();
@@ -227,13 +230,13 @@ void constructMLP() {
 void initWeights() {
 	// Initialize weights
 	// Weight values should be -2.0 < w < +2.0 random numbers using RND_SEED
-    Weights W_XtoH = Weights(N_INPUT, H1_HIDDEN);
+    W_XtoH = Weights(N_INPUT, H1_HIDDEN);
 	if (LAYER_NUM == 4) {
-		Weights W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
-		Weights W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);	
+		W_HtoH = Weights(H1_HIDDEN, H2_HIDDEN);
+		W_HtoY = Weights(H2_HIDDEN, M_OUTPUT);	
 	}
 	if (LAYER_NUM == 3) {
-		Weights W_HtoY = Weights(H1_HIDDEN, M_OUTPUT);
+		W_HtoY = Weights(H1_HIDDEN, M_OUTPUT);
 	}    
 }
 
@@ -282,16 +285,17 @@ void verifyDataFile() {
     trainingFile.close();
     for (int i=0; i < p_cnt; i++) {//sizeof(trainingPatterns_Input); i++) {
         for (int j=0; j < N_INPUT; j++) {
-            cout << trainingPatterns_Input[i][j] << " ";
+            //cout << trainingPatterns_Input[i][j] << " ";
         }
-        cout << endl;
+        //cout << endl;
     }
-    cout << endl << endl;
+    //cout << endl << endl;
+
     for (int i=0; i < p_cnt; i++) {
         for (int j=0; j < M_OUTPUT; j++) {
-            cout << trainingPatterns_Teacher[i][j] << " ";
+            //cout << trainingPatterns_Teacher[i][j] << " ";
         }
-        cout << endl;
+        //cout << endl;
     }
 
 	ifstream testFile(testFileName);   // read training data file
@@ -324,23 +328,23 @@ void verifyDataFile() {
                 else testPatterns_Teacher[p_test_cnt][index++] = stof(values[i]);
 				// cout << values[i] << ",";
 			}	
-			cout << endl;
+			//cout << endl;
 			p_test_cnt++;
         }
 	}
     testFile.close();
     for (int i=0; i < p_test_cnt; i++) {//sizeof(trainingPatterns_Input); i++) {
         for (int j=0; j < N_INPUT; j++) {
-            cout << testPatterns_Input[i][j] << " ";
+            //cout << testPatterns_Input[i][j] << " ";
         }
-        cout << endl;
+        //cout << endl;
     }
-    cout << endl << endl;
+    //cout << endl << endl;
     for (int i=0; i < p_test_cnt; i++) {
         for (int j=0; j < M_OUTPUT; j++) {
-            cout << testPatterns_Teacher[i][j] << " ";
+            //cout << testPatterns_Teacher[i][j] << " ";
         }
-        cout << endl;
+        //cout << endl;
     }	 
 }
 
@@ -354,15 +358,14 @@ void training() {
 	// Choose a format that can easily be depicted using the freely available program gnuplot.
 	
     // 1. pick a pattern
-
+    
     //for (int p = 0 ; p < p_cnt; ++p) {
+    for (int p = 0 ; p < 1; ++p) {
         // 1. put training pattern input and teacher values into neurons
         //trainingPatterns_Input[p]
-        //
-        //initNeuron(L_X, trainingPatterns_Input[p]);
-        //initNeuron(L_Y, trainingPatterns_Teacher[p]);
+        initNeuron(L_X, trainingPatterns_Input[p]);
+        initTeacher(L_Y, trainingPatterns_Teacher[p]);
        
-        /*
         // 2. calculate weighted sum and output of each neuron
         // using weighted sum
         // using transfer function
@@ -370,14 +373,16 @@ void training() {
         calcOutput(L_X, L_H1, W_XtoH);
         if (LAYER_NUM == 3) {
             calcOutput(L_H1, L_Y, W_HtoY);
-        } else if (LAYER_NUM ==4) {
+        } else if (LAYER_NUM == 4) {
             calcOutput(L_H1, L_H2, W_HtoH);
             calcOutput(L_H2, L_Y, W_HtoY);
         }
         
         // 4. calculate error - using error function "sum of quadratic differences" and print it as a learning curve 
-        calcError(L_Y);
-        
+        float error = calcError(L_Y);
+        //cout << "error " << error << endl;
+
+        /*
         // 5. calculate delta value - output
         calcDelta_OutputLayer(L_Y);
         // 6. calculate delta value - H2
@@ -405,7 +410,7 @@ void training() {
         }
         updateWeights(W_HtoY);
         */
-    //}
+    }
     
 }
 
@@ -427,15 +432,79 @@ void validation() {
 }
 
 /* ToDo */
-void initNeuron(Layer l, float* pattern){};
-void calcOutput(Layer l_Pre, Layer l_Next, Weights w){};
-float calcTransferFunction(float net, Transferfunction tf){
-    return 0.0;
+void initNeuron(Layer l, float* pattern){
+
+    /* watch for BIAS */
+    for (int i = 1; i < l.num_neurons + 1; ++i) {
+        l.neurons[i].output = pattern[i-1];
+    }
+
 }
 
-void calcError(Layer l){}; 
-void printGNUPlotForm(string fileName, float error){};
+void initTeacher(Layer l, float* pattern){
 
+    for (int i = 1; i < l.num_neurons + 1; ++i) {
+        l.neurons[i].teacher = pattern[i-1];
+    }
+
+}
+
+void calcOutput(Layer pre, Layer next, Weights w) {
+
+    //cout << "" << endl;
+    //cout << pre.num_neurons << endl;
+
+    cout << w.weights[0][0] << "\n" ;
+
+    /* bias */
+    for (int j = 0; j < next.num_neurons; j++) {
+        cout << "(" << 0 << " " << j << ") " << w.weights[0][j] << " * 1 ";
+        next.neurons[j].net_val += w.weights[0][j];
+    }
+    cout << " " << "\n";
+
+    for (int i = 1; i < pre.num_neurons + 1; i++) {
+        cout << " -------------> " << i << endl;
+        for (int j = 0; j < next.num_neurons; j++) {
+            cout << "(" << i << " " << j << ") " << w.weights[i][j] << " * " << pre.neurons[i].output << "  ";
+            next.neurons[j].net_val += w.weights[i][j] * pre.neurons[i].output;
+        }
+        cout << " " << "\n";
+    }
+
+    cout << "-----------------------------------> " << endl;
+
+    for (int j = 0; j < next.num_neurons; j++) {
+        next.neurons[j].output =\
+                calcTransferFunction(next.neurons[j].net_val, next.tf);
+    }
+}
+
+float calcTransferFunction(float net, Transferfunction tf){
+
+    /* only logistic function now */
+    cout << "net  " << net << endl;
+    float result = 1 /(1 + exp(-net));
+    cout << result << endl;
+    return result;
+
+}
+
+float calcError(Layer l) {
+    
+    float sum = 0;
+    float error = 0;
+
+    for (int i = 1; i < l.num_neurons + 1; ++i) {
+        sum += l.neurons[i].teacher - l.neurons[i].output;
+    }
+    error = 0.5 * pow(sum, 4);
+
+    cout << error << endl;
+
+} 
+
+void printGNUPlotForm(string fileName, float error){};
 void calcDelta_Hidden(Layer l_Pre, Layer l_Next, Weights w){};
 void calcDelta_OutputLayer(Layer l){};
 float calcDerivationTF(Transferfunction tf, float net_val){
