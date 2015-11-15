@@ -33,3 +33,7 @@ Makefile
 cmake_install.cmake
 __MACOSX/
 CMakeCache.txt
+
+# ignore LateX files
+*.aux
+*.log
