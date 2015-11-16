@@ -27,13 +27,12 @@
 *.out
 *.app
 
-# Ignore
+# nested folders
+bin/
 CMakeFiles/
-Makefile
-cmake_install.cmake
-__MACOSX/
+images/
+*.cmake
 CMakeCache.txt
-
 # ignore LateX files
 *.aux
 *.log

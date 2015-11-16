@@ -5,7 +5,7 @@
 	- Shinho Kang, 2890169, wis.shinho.kang@gmail.com
 
 # PA-A
-    - To implement a 2-layer Perzeptron
+    - To implement an MLP
 
 # Instruction
     - Please read the "README.txt" file to compile and execute this source code.    
@@ -19,7 +19,9 @@ console command:
 `make`
 
 2. To run the program to read data file
-`./perzeptron <data file name>`
+`./MLP <training data file name> <test data file name>`
 e.g.
-`./perzeptron PA-A-train.dat`
+`./MLP training.dat test.dat`
 
+3. After execution of the program, two result file would be created
+`result_test.dat` `result_training.dat` 
