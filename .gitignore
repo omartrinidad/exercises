@@ -33,5 +33,6 @@ CMakeFiles/
 images/
 *.cmake
 CMakeCache.txt
-Makefile
-Sheet[0-9][0-9].pdf
+# ignore LateX files
+*.aux
+*.log
