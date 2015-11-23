@@ -241,8 +241,8 @@ However it does not assure that is linear separable from all others.
                                           \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot \frac{\partial out_{h}}{\partial net_{h}}              & \cdot w_{nh}                                                     \\[0.68em]
                                                 & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial f(net_{h})}{\partial net_{h}} = f'(net_{h})   &                                                                  \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot f'(net_{h})                                            & \cdot w_{nh}                                                     \\[0.68em]
-                                          \:=\: & \sum_{k=1}^{K} \frac{\partial E}{\partial \overline{net}_{k}} \cdot \frac{\partial \overline{net}_{k}}{\partial out_{n}}   &                                                              &                                                                  \\[0.68em]
-        \:=\: & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial}{\partial out_{h}} \cdot \sum_{j=0}^{H} out_{j} \cdot \overline{w}_{jk} = \overline{w}_{hk}                                                                              \\[0.68em]
+                                          \:=\: & \sum_{k=1}^{K} \frac{\partial E}{\partial \underline{net}_{k}} \cdot \frac{\partial \underline{net}_{k}}{\partial out_{n}}   &                                                              &                                                                  \\[0.68em]
+        \:=\: & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial}{\partial out_{h}} \cdot \sum_{j=0}^{H} out_{j} \cdot \underline{w}_{jk} = \underline{w}_{hk}                                                                              \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial y_{m}} \cdot \frac{y_{m} }{\partial net_{m} }                             &                                                              &                                                                  \\[0.68em]
                                           \:=\: & \frac{\partial}{\partial y_{m}} \cdot \frac{1}{2} \sum_{j=1}^{M} (\hat{y}_{j} - y_{j})^{2}             &                                                              &                                                                  \\[0.68em]
                                           \:=\: & \frac{1}{2} \frac{\partial}{\partial y_{m}} (\hat{y}_{m} - y_{m})^{2}             &                                                              &                                                                  \\[0.68em]
@@ -251,6 +251,6 @@ However it does not assure that is linear separable from all others.
     \end{aligned}
 \end{equation}
 
-Conclusion, $$ \sum_{h=1}^{M} - (\hat{y}_{m} - y_{m}) \cdot f'(net_{m}) \cdot \overline{w}_{hm} \cdot f'(net_{h}) \cdot w_{nh}. $$
+Conclusion, $$ \sum_{h=1}^{M} - (\hat{y}_{m} - y_{m}) \cdot f'(net_{m}) \cdot \underline{w}_{hm} \cdot f'(net_{h}) \cdot w_{nh}. $$
 
 \end{document}
