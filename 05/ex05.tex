@@ -187,10 +187,7 @@ $$ Y = X $$
 A three hidden layer whose neurons have binary output can represent 8
 combinations. See table \ref{comb}.
 
-So, it is enough to have three neurons in the hidden layer to emulate a
-encoder-decoder.
-
-\begin{table}
+\begin{table}[H]
     \centering
     \begin{tabular}{l c r}
         0& 0 &0 \\
@@ -205,6 +202,9 @@ encoder-decoder.
     \caption{Different outputs for a layer with three neurons and binary output}
     \label{comb}
 \end{table}
+
+So, it is enough to have three neurons in the hidden layer to emulate a
+encoder-decoder.
 
 \subsection{MLP 8-2-8 task}
 
@@ -234,15 +234,15 @@ However it does not assure that is linear separable from all others.
 
 \begin{equation}
     \begin{aligned}
-        \frac{\partial E}{\partial x_{n}} \:=\: & \frac{\partial E}{\partial net_{n}} \cdot                                                            &                                                              & \mathbf{ \frac{\partial net_{n}}{\partial x_{n}} }               \\[0.68em]
+        \frac{\partial E}{\partial x_{n}} \:=\: & \frac{\partial E}{\partial net_{n}} \cdot                                                            &                                                              & \mathbf{ \frac{\partial net_{h}}{\partial x_{n}} }               \\[0.68em]
                                                 & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              &                                                              & \frac{\partial}{\partial x_{n}} \sum_{i=0}^{n}x_{i} \cdot w_{ih} \\[0.68em]
                                                 & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              &                                                              & w_{nh} \: \textit{(when i = n)}                                  \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial net_{n}}                                                                  &                                                              & \cdot w_{nh}                                                     \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot \frac{\partial out_{h}}{\partial net_{h}}              & \cdot w_{nh}                                                     \\[0.68em]
                                                 & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial f(net_{h})}{\partial net_{h}} = f'(net_{h})   &                                                                  \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot f'(net_{h})                                            & \cdot w_{nh}                                                     \\[0.68em]
-                                          \:=\: & \sum_{k=1}^{K} \frac{\partial E}{\partial net_{k}} \cdot \frac{\partial net_{k}}{\partial out_{n}}   &                                                              &                                                                  \\[0.68em]
-                                          \:=\: & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial}{\partial out_{h}} \cdot \sum_{j=0}^{H} out_{j} \cdot w_{jk} = w_{hk}                                                                              \\[0.68em]
+                                          \:=\: & \sum_{k=1}^{K} \frac{\partial E}{\partial \overline{net}_{k}} \cdot \frac{\partial \overline{net}_{k}}{\partial out_{n}}   &                                                              &                                                                  \\[0.68em]
+        \:=\: & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial}{\partial out_{h}} \cdot \sum_{j=0}^{H} out_{j} \cdot \overline{w}_{jk} = \overline{w}_{hk}                                                                              \\[0.68em]
                                           \:=\: & \frac{\partial E}{\partial y_{m}} \cdot \frac{y_{m} }{\partial net_{m} }                             &                                                              &                                                                  \\[0.68em]
                                           \:=\: & \frac{\partial}{\partial y_{m}} \cdot \frac{1}{2} \sum_{j=1}^{M} (\hat{y}_{j} - y_{j})^{2}             &                                                              &                                                                  \\[0.68em]
                                           \:=\: & \frac{1}{2} \frac{\partial}{\partial y_{m}} (\hat{y}_{m} - y_{m})^{2}             &                                                              &                                                                  \\[0.68em]
@@ -251,6 +251,6 @@ However it does not assure that is linear separable from all others.
     \end{aligned}
 \end{equation}
 
-Conclusion, $$ \sum_{h=1}^{M} - (\hat{y}_{m} - y_{m}) \cdot f'(net_{m}) \cdot w_{hm} \cdot f'(net_{h}) \cdot w_{nh}. $$
+Conclusion, $$ \sum_{h=1}^{M} - (\hat{y}_{m} - y_{m}) \cdot f'(net_{m}) \cdot \overline{w}_{hm} \cdot f'(net_{h}) \cdot w_{nh}. $$
 
 \end{document}
