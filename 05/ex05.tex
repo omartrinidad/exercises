@@ -1,0 +1,256 @@
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,amsfonts,calc}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{titlesec}
+
+% Avoid section numbers
+\titleformat{\section}
+{\normalfont\Large\bfseries}% The style of the section title
+{}                          % a prefix
+{0pt}                       % How much space exists between the prefix and the title
+{}    % How the section is represented
+
+\titleformat{\subsection}
+{\normalfont\large\bfseries}% The style of the section title
+{}                          % a prefix
+{0pt}                       % How much space exists between the prefix and the title
+{}    % How the section is represented
+
+\begin{document}
+ 
+\title{Sheet 5} 
+\maketitle
+
+\section{Assignment 24}
+
+The figure \ref{fig:learning} represents the typical learning curve for a MLP
+trained with Backpropagation of Error using the single step learning strategy.
+As we can see there is a first stage where the error decreases a little bit,
+and after that we can see that this change happen faster. After this, the
+change will be slow. And finally, we will reach a plateu.
+
+\begin{figure}[h]
+    \centering
+    \input{learning}
+    \caption{Typical learning curve for an MLP}
+    \label{fig:learning}
+\end{figure}
+
+\section{Assignment 25}
+
+The differences in each of these graphs show us that speed and accuracy of
+learning can be controlled by scaling the axes. In the figure \ref{fig:b} we
+can observe that when the axe X is logarithimic scaled won't be easy to reach 
+the negative gradient. 
+
+\begin{figure}[p]
+
+        \centering
+        \input{outputxy}
+        \caption{X and Y axes scaled linear}
+        \label{fig:a}
+
+        \input{outputlogx}
+        \caption{X axe scaled logarithmic }
+        \label{fig:b}
+
+\end{figure}
+
+\begin{figure}[p]
+
+        \centering
+        \input{outputlogy}
+        \caption{Y axe scaled logarithmic }
+        \label{fig:c}
+
+        \input{outputlogxy}
+        \caption{X and Y axes scaled logarithmic }
+        \label{fig:d}
+
+\end{figure}
+
+
+\section{Assignment 26: Resilient-PROP algorithm}
+
+The idea of RPROP algorithm~\cite{riedmiller1993direct} is to change the size of the weight-update $\Delta w_{ij}$ 
+without considering the size of the partial derivative. The algorithms 
+which are proposed to deal with the problem of appropiate weight-update by doing
+some sort of parameters adaptation during learning still have some failures since that
+the size of the actually taken weight-step $\Delta w_{ij}$ is not only depending
+on the learning rate, but also on the partial derivative $ \frac{\partial E}{\partial w_{ij}} $.
+The above problem can lead to oscillation, preventing the error to fall below a certain value.
+
+Detail,
+
+\begin{equation}
+    ^{p}\Delta_{ij} = \left\{ 
+                        \begin{array}{ll}
+                            \eta^{+} \cdot\: ^{p-1}\Delta_{ij}, & \:if\: ^{p-1}(\frac{\partial E}{\partial w_{ij}}) \:\cdot\: ^{p}(\frac{\partial E}{\partial w_{ij}}) > 0 \\
+                            \eta^{-} \cdot\: ^{p-1}\Delta_{ij}, & \:if\: ^{p-1}(\frac{\partial E}{\partial w_{ij}}) \:\cdot\: ^{p}(\frac{\partial E}{\partial w_{ij}}) < 0 \\
+                                             ^{p-1}\Delta_{ij}, & otherwise
+                        \end{array}
+                      \right.
+\end{equation}
+
+Where, $ 0 < \eta^{-} < 1 < \eta^{+} $, here $\eta^{-}$ is the decrease factor
+and $\eta^{+}$ is the increase factor.
+
+\begin{equation}
+    ^{p}\Delta w_{ij} = \left\{
+                            \begin{array}{ll}
+                                -\:^{p}\Delta_{ij}, & \:if\: ^{p}(\frac{\partial E}{\partial w_{ij}}) > 0 \\
+                                +\:^{p}\Delta_{ij}, & \:if\: ^{p}(\frac{\partial e}{\partial w_{ij}}) < 0 \\
+                                0, & otherwise $$ \\
+                                -\:^{p-1} \Delta w_{ij}, & \:if\: ^{p-1}(\frac{\partial E}{\partial w_{ij}}) \:\cdot\: ^{p}(\frac{\partial E}{\partial w_{ij}}) < 0 \\
+                            \end{array}
+                        \right. \\
+\end{equation}
+
+$$ \:if\: ^{p-1}(\frac{\partial E}{\partial w_{ij}}) \:\cdot\: ^{p}(\frac{\partial E}{\partial w_{ij}}) < 0, ^{p}(\frac{\partial E}{\partial w_{ij}}) = 0 $$
+$$ ^{p-1}w_{ij} =\: ^{p}w_{ij} \:+\: ^{p}\Delta w_{ij} $$
+
+
+If gradient $\frac{\partial E}{\partial w_{ij}}$ retains its sign, the update-value is
+slightly increased in order to accelerate convergence in shallow regions.
+
+\begin{equation}
+    \Rightarrow\: ^{p}\Delta_{ij} =\: \eta^{+} \:\cdot\: ^{p-1}\Delta_{ij}, \:if\: ^{p-1}(\frac{\partial E}{\partial w_{ij}}) \:\cdot\: ^{p}(\frac{\partial E}{\partial w_{ij}}) > 0\
+\end{equation}
+
+\begin{equation}
+    \Rightarrow\: ^{p}\Delta w_{ij} = \left\{
+                                        \begin{array}{ll}
+                                            -\:^{p}\Delta_{ij}, \:if\: derivative > 0\\
+                                            +\:^{p}\Delta_{ij}, \:if\: derivative < 0
+                                        \end{array}
+                                    \right.
+\end{equation}
+
+If gradient changes its sign, that indicates that the last update was too big
+and the algorithm has jumped over a local minimun, the update-value $ \Delta_{ij} $
+is decreased by the factor $ \eta^{-} $.
+
+$$ \Rightarrow\: ^{p}\Delta_{ij} =\: \eta^{-} \:\cdot\: ^{p-1}\Delta_{ij} $$
+
+and the previous weight-update is reverted which is denoted "back-tracking" weight-step.
+
+$$ ^{p}\Delta w_{ij} =\: -\:^{p-1}\Delta w_{ij} $$
+
+$$ ^{p}(\frac{\partial E}{\partial w_{ij}}) =\: 0 $$
+
+% reference to biblatex
+\bibliographystyle{ieeetr}
+\bibliography{ex05}
+
+\section{Assignment 27}
+
+\subsection{Advantages of momentum}
+
+\begin{itemize}
+
+    \item Avoid oscillation: Single step learning can lead to oscillation when in steep
+valleys, because of the large gradient. In contrast, cumulative learning can
+reduce the step size, by adding the weight change of previous step.
+
+    \item Accelerate on plateaus: Single step learning keeps its speed of covergence even
+if the step is on flat plateaus, but cumulative learning increases the step
+size on flat plateaus by adding the weight change of previous step to the new
+one.
+
+\end{itemize}
+
+\subsection{Disadvantages of momentum}
+
+\begin{itemize}
+
+    \item Setting the momentum parameter \textit{too high} can create a risk of overshooting the
+minimum.
+
+    \item Setting the momentum parameter \textit{too low} can not reliably avoid local minima, and
+slow down the speed of covergence.
+
+\end{itemize}
+\newpage
+
+\section{Assignment 28}
+
+\subsection{MLP 8-3-8 task}
+
+$$ X \in 1-out-of-8\:binary\:coding $$
+
+$$ Y = X $$
+
+A three hidden layer whose neurons have binary output can represent 8
+combinations. See table \ref{comb}.
+
+So, it is enough to have three neurons in the hidden layer to emulate a
+encoder-decoder.
+
+\begin{table}
+    \centering
+    \begin{tabular}{l c r}
+        0& 0 &0 \\
+        0& 0 &1 \\
+        0& 1 &0 \\
+        0& 1 &1 \\
+        1& 0 &0 \\
+        1& 0 &1 \\
+        1& 1 &0 \\
+        1& 1 &1 \\
+    \end{tabular}
+    \caption{Different outputs for a layer with three neurons and binary output}
+    \label{comb}
+\end{table}
+
+\subsection{MLP 8-2-8 task}
+
+Given a hidden layer $h$ with two neurons:
+
+$$ net_{h} = w_{0} + w_{1} \cdot h_{1} +  w_{2} \cdot h_{2} $$
+
+We can draw a line to separate eight points using a function like this:
+
+\begin{equation}
+    h_{2} = \begin{array}{l}
+                    - \frac{w_{0} + w_{1}}{w_{2}}\\
+                    - \frac{w_{1}}{w_{2}} \cdot h_{1} - \frac{w_{0}}{w_{2}}
+            \end{array}
+\end{equation}
+
+\bigskip
+\bigskip
+
+\subsection{MLP 8-1-8 task}
+
+Eight different states are eight different positions in (out h). The net
+between hidden layer and output layer can implement a linear separation.
+However it does not assure that is linear separable from all others.
+
+\section{Assignment 29}
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial E}{\partial x_{n}} \:=\: & \frac{\partial E}{\partial net_{n}} \cdot                                                            &                                                              & \mathbf{ \frac{\partial net_{n}}{\partial x_{n}} }               \\[0.68em]
+                                                & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              &                                                              & \frac{\partial}{\partial x_{n}} \sum_{i=0}^{n}x_{i} \cdot w_{ih} \\[0.68em]
+                                                & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              &                                                              & w_{nh} \: \textit{(when i = n)}                                  \\[0.68em]
+                                          \:=\: & \frac{\partial E}{\partial net_{n}}                                                                  &                                                              & \cdot w_{nh}                                                     \\[0.68em]
+                                          \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot \frac{\partial out_{h}}{\partial net_{h}}              & \cdot w_{nh}                                                     \\[0.68em]
+                                                & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial f(net_{h})}{\partial net_{h}} = f'(net_{h})   &                                                                  \\[0.68em]
+                                          \:=\: & \frac{\partial E}{\partial out_{n}}                                                                  & \cdot f'(net_{h})                                            & \cdot w_{nh}                                                     \\[0.68em]
+                                          \:=\: & \sum_{k=1}^{K} \frac{\partial E}{\partial net_{k}} \cdot \frac{\partial net_{k}}{\partial out_{n}}   &                                                              &                                                                  \\[0.68em]
+                                          \:=\: & \mathrel{\makebox[\widthof{=}]{\vdots}}                                                              & \frac{\partial}{\partial out_{h}} \cdot \sum_{j=0}^{H} out_{j} \cdot w_{jk} = w_{hk}                                                                              \\[0.68em]
+                                          \:=\: & \frac{\partial E}{\partial y_{m}} \cdot \frac{y_{m} }{\partial net_{m} }                             &                                                              &                                                                  \\[0.68em]
+                                          \:=\: & \frac{\partial}{\partial y_{m}} \cdot \frac{1}{2} \sum_{j=1}^{M} (\hat{y}_{j} - y_{j})^{2}             &                                                              &                                                                  \\[0.68em]
+                                          \:=\: & \frac{1}{2} \frac{\partial}{\partial y_{m}} (\hat{y}_{m} - y_{m})^{2}             &                                                              &                                                                  \\[0.68em]
+                                          \:=\: & \frac{1}{2} \cdot 2 \cdot (\hat{y}_{m} - y_{m}) \cdot  \frac{\partial}{\partial y_{m}} \cdot (-y_{m} )            &                                                              &                                                                  \\[0.68em]
+                                          \:=\: & -(\hat{y}_{m} - y_{m})            &                                                              &                                                                  \\[0.68em]
+    \end{aligned}
+\end{equation}
+
+Conclusion, $$ \sum_{h=1}^{M} - (\hat{y}_{m} - y_{m}) \cdot f'(net_{m}) \cdot w_{hm} \cdot f'(net_{h}) \cdot w_{nh}. $$
+
+\end{document}
