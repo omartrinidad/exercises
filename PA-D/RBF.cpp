@@ -98,7 +98,6 @@ class RBFLayer {
     public:
         RBFNeuron *rbfNeurons;
         RBFTransferfunction tf;
-        
         RBFLayer();
 };
 RBFLayer::RBFLayer() {
@@ -204,13 +203,14 @@ int p_cnt = 0;      // start from 0
 //          . calculate error and print into a output file "learningcurve.dat"
 //          . calculate weight changes and update weight 
 int main(int argc, char** argv) {
+
     try {
         // arguments as filenames 
         trainingFileName = argv[1];
         
         loadDataFile();   // verify data files and load into memory
-        constructRBF();     // construct RBF and setting init data
-                            // include weights 
+        constructRBF();   // construct RBF and setting init data
+                          // include weights 
         //trainRBF();
         
     } catch(const exception& e) {
@@ -270,6 +270,7 @@ void loadDataFile() {
 //======================================================
 // Construct RBF
 void constructRBF() {
+
     // set Layers and neurons 
     L_X = InputLayer();
     L_RBF = RBFLayer();
@@ -281,16 +282,28 @@ void constructRBF() {
     // initialize weights and assign random values 
     W = Weights();
     W.initWeights();
+
 }    
 
 // set RBF centers and sizes
 void setRBFCenterSize() {
     // TODO: implement setting centers and sizes for RBF neurons.
-    //      option 1. uniform distribution - easiest
-    //      option 2. statistical analysis
-    //      option 3. subset of data - not recommended
+    // option 1. uniform distribution - easiest
+    // option 2. statistical analysis
+    // option 3. subset of data - not recommended
     
-    
+    float lower = -2;
+    float upper = 2;
+    float stepSize = (upper - lower)/(N_INPUT + 1);
+
+    L_RBF.rbfNeurons->size = N_INPUT;
+
+    for (int x = 1; x <= N_INPUT ; x++ ) {
+        lower +=  stepSize;
+        L_RBF.rbfNeurons->center[x] = lower;
+        //cout << lower << endl;
+    }
+
 }
 
 
