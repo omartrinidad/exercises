@@ -5,10 +5,9 @@
 
 # PA-D
     - To implement a RBF Network
-    - 
 
 # Instruction
-    -     
+    - 
 =========================================*/
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,22 +21,27 @@
 
 using namespace std;
 
-//=====================
+//======================================================
 // Setting Area
 #define N_INPUT 2       // Number of neurons in input layer
-#define K_RBF 2   	// Number of neurons in RBF layer
+#define K_RBF 25   	    // Number of neurons in RBF layer
+                        // (K ^ N_INPUT) for uniform distribution
+                        // e.g. when N_INPUT = 3, K_RBF = X ^ 3 (1,8,27, ...) 
 #define M_OUTPUT 1      // Number of neurons in output layer
-#define RND_SEED 5      // seed for Random number generator 
-						// Weight values are initialized refer to the seed  												 
-//=====================
+#define RND_SEED 5      // seed for Random number generator
+						// Weight values are initialized refer to the seed
+#define MAX_PATTERN 999
+//======================================================
 
-//=====================
+
+//======================================================
 // Helper functions - split str
 std::vector<std::string> split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
+        if (!item.empty())
+            elems.push_back(item);
     }
     return elems;
 }
@@ -46,9 +50,26 @@ std::vector<std::string> split(const std::string &s, char delim) {
     split(s, delim, elems);
     return elems;
 }
+//======================================================
 
-//=====================
-// Input Layer & Neuron
+//======================================================
+// Declaring Functions
+void loadDataFile();
+void constructRBF();
+void setRBFCenterSize();
+
+void trainRBF();
+void calcRBFLayer();
+void calcOutput();
+void calcError();
+//======================================================
+
+
+
+//======================================================
+// CLASSES
+//================================
+// class: Input Layer & Neuron
 class InputLayer {
     public:
         float *input;
@@ -58,12 +79,14 @@ InputLayer::InputLayer() {
     input = new float[N_INPUT];
 }
 
-//=====================
-// RBF Layer & Neuron
+//================================
+// class: RBF Layer & Neuron
 class RBFNeuron {
     public:
         float *center;
         float size;
+        float output;
+        
         RBFNeuron();
 };
 RBFNeuron::RBFNeuron() {
@@ -75,6 +98,7 @@ class RBFLayer {
     public:
         RBFNeuron *rbfNeurons;
         RBFTransferfunction tf;
+        
         RBFLayer();
 };
 RBFLayer::RBFLayer() {
@@ -82,97 +106,114 @@ RBFLayer::RBFLayer() {
     tf = GAUSSIANBELL;
 }
 
-//=====================
-// Output Layer & Neuron
+//================================
+// class: Output Layer & Neuron
 class OutputNeuron {
     public:
         float netVal;
         float output;
         float teacher;
         float delta;
+        
         OutputNeuron();
 };
 OutputNeuron::OutputNeuron() {
 }
+
 class OutputLayer {
     public:
         OutputNeuron *outNeurons;
+        float learningRate;
+        
         OutputLayer();
+        void setLearningRate(float _lr);
 };
 OutputLayer::OutputLayer() {
     outNeurons = new OutputNeuron[M_OUTPUT+1];  // [0] will not be used.
 }
+void OutputLayer::setLearningRate(float _lr) {
+    learningRate = _lr;
+}
 
 
-//=====================
-// Weights
+//================================
+// class: Weights
 class Weights {
     public:
-        float **weights;
-        float **weight_changes;
-        Weights();
+        float **weight;
+        float **weight_change;
         
+        Weights();
         void initWeights();
 };
 Weights::Weights() {
-    srand(RND_SEED); // random seed
+    // class constructor
     int X = K_RBF + 1;
     int Y = M_OUTPUT + 1;
-    weights = new float*[X];
-    weight_changes = new float*[X];
+    weight = new float*[X];
+    weight_change = new float*[X];
     
     for (int x = 0; x < X; x++) {
-        weights[x] = new float[Y];
-        weight_changes[x] = new float[Y];
+        weight[x] = new float[Y];
+        weight_change[x] = new float[Y];
     }    
 }
-
 void Weights::initWeights() {
-    // cout << "============================" << endl;
-    // cout << "Weight Initiate" << endl;
+    // initialize weights - random value between -0.5 and +0.5
+    srand(RND_SEED); // random seed
     int X = K_RBF + 1;
     int Y = M_OUTPUT + 1;    
     for (int x = 0; x < X; x++) {
         for (int y = 1; y < Y; y++) {
-            weights[x][y] = (float(rand()) / float(RAND_MAX)) - 0.5;
-            // cout << weights[x][y] << " ";
-            weight_changes[x][y] = 0;
+            weight[x][y] = (float(rand()) / float(RAND_MAX)) - 0.5;
+            weight_change[x][y] = 0;
         }
-        // cout << "" << endl;
     }
-    // cout << "============================" << endl;
-
 }
-
-/////============================
-// Declare RBF components
+//======================================================
 
 
 
-void verifyDataFile();
-void constructRBF();
-void trainRBF();
-void validate();
 
+//======================================================
+// Declaring RBF components
+InputLayer L_X;     // input layer
+RBFLayer L_RBF;     // rbf layer
+OutputLayer L_Y;    // output layer
+
+Weights W;  // weights between rbf layer and output layer
+
+// Training data
 string trainingFileName;
-string testFileName;
-// float trainingPatterns_Input[ MAX_TRAINING_PATTERN ][ N_INPUT ];
-// float trainingPatterns_Teacher[ MAX_TRAINING_PATTERN ][ M_OUTPUT ];
-// float testPatterns_Input[ MAX_TRAINING_PATTERN ][ N_INPUT ];
-// float testPatterns_Teacher[ MAX_TRAINING_PATTERN ][ M_OUTPUT ];
+float trainData_Input[ MAX_PATTERN ][ N_INPUT ];
+float trainData_Teacher[ MAX_PATTERN ][ M_OUTPUT ];
+int p_cnt = 0;      // start from 0
+//======================================================
 
-/////============================
+
+//======================================================
+// main():
+//      - parse arguments
+//      - load data file
+//      - construct RBF network
+//          . set layers and neurons
+//          . set RBF centers and sizes
+//          . assign random values to weights 
+//      - train RBF network
+//          . calculate rbf neuron output
+//          . calculate output (weighted sum)
+//          . calculate error and print into a output file "learningcurve.dat"
+//          . calculate weight changes and update weight 
 int main(int argc, char** argv) {
     try {
         // arguments as filenames 
         trainingFileName = argv[1];
-        testFileName = argv[2];
         
-        verifyDataFile();   // verify data files and load into memory
+        loadDataFile();   // verify data files and load into memory
         constructRBF();     // construct RBF and setting init data
                             // include weights 
-        trainRBF();
-        validate();
+        //trainRBF();
+        
     } catch(const exception& e) {
         cerr << e.what();
     } catch(const string& msg) {
@@ -182,140 +223,107 @@ int main(int argc, char** argv) {
 }
 
 
-
-
-
-
-/////============================
-// Verify datafiles and load the data
-void verifyDataFile() {
-	// verify given files
-	// - ignore header lines (commented lines)
-	// - check the number of input and teacher values each line
-	// - check if the number of pattern is more than defined number
-/*	
+//======================================================
+// loadDataFile(): load given data
+// - ignore header lines (commented lines)
+// - check the number of input and teacher values each line
+void loadDataFile() {
 	ifstream trainingFile(trainingFileName);   // read training data file
     if ( !trainingFile.eof() ) {
         int comment_cnt = 0;
-    	string line;
+        string line;
         
         while(getline(trainingFile, line)) {
-			if (line[0] == '#') {
+            if (line[0] == '#') {
 				// ingnore comment line
 				comment_cnt++;
 				continue;
 			}
-			// parse a line
+			p_cnt++;
+            if (p_cnt > MAX_PATTERN) {
+                break;
+            }
+            
+            // parse a line
 			vector<std::string> values = split(line, ' ');
 			
-			// store data into array
-			bool b_input = true;
-            int index = 0;
-			for (int i =0; i < values.size(); ++i) {
-				if (values[i].empty()){
-					if (b_input) index = 0;
-                    b_input = false;
-                    continue;
-				}
-                // cout << values[i]<< " ";
-                if (b_input && index >= N_INPUT) {
+            // verify number of data in a line
+			if (values.size() != N_INPUT + M_OUTPUT) {
                     stringstream ess;
-                    ess << "Too many input values in pattern " << p_cnt;
-                    throw(ess.str()); 
+                    ess << "The number of data in pattern number " << p_cnt << " is not match with defined number.";
+                    throw(ess.str());
+            }
+            
+            // store data into array
+            for (int i = 0; i < values.size(); i++) {
+                if (i < N_INPUT) {
+                    trainData_Input[p_cnt-1][i] = stof(values[i]);
                 }
-                if (!b_input && index >= M_OUTPUT) {
-                    stringstream ess;
-                    ess << "Too many teacher values in pattern " << p_cnt;
-                    throw(ess.str()); 
+                else {
+                    trainData_Teacher[p_cnt-1][i-N_INPUT] = stof(values[i]);
                 }
-                
-                if (b_input)  
-                    trainingPatterns_Input[p_cnt][index++] = stof(values[i]);
-                else trainingPatterns_Teacher[p_cnt][index++] = stof(values[i]);
-			}	
-            //cout << endl;
-			p_cnt++;
+            }
         }
 	}
     trainingFile.close();
-    // cout << "============================" << endl;
-    // cout << "training patterns" << endl;
-    // for (int i=0; i < p_cnt; i++) {
-    //     for (int j=0; j < N_INPUT; j++) {
-    //         cout << trainingPatterns_Input[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl;
+}
 
-    // for (int i=0; i < p_cnt; i++) {
-    //     for (int j=0; j < M_OUTPUT; j++) {
-    //         cout << trainingPatterns_Teacher[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl << endl;
+//======================================================
+// Construct RBF
+void constructRBF() {
+    // set Layers and neurons 
+    L_X = InputLayer();
+    L_RBF = RBFLayer();
+    L_Y = OutputLayer();
+    
+    // set RBF centers and sizes
+    setRBFCenterSize();
+    
+    // initialize weights and assign random values 
+    W = Weights();
+    W.initWeights();
+}    
+
+// set RBF centers and sizes
+void setRBFCenterSize() {
+    // TODO: implement setting centers and sizes for RBF neurons.
+    //      option 1. uniform distribution - easiest
+    //      option 2. statistical analysis
+    //      option 3. subset of data - not recommended
+    
+    
+}
 
 
-	ifstream testFile(testFileName);   // read test data file    
-    if ( !testFile.eof() ) {
-        int comment_cnt = 0;
-    	string line;
-        
-        while(getline(testFile, line)) {
-			if (line[0] == '#') {
-				// ingnore comment line
-				comment_cnt++;
-				continue;
-			}
-			// parse a line
-			vector<std::string> values = split(line, ' ');
-			
-			// store data into array
-			bool b_input = true;
-            int index = 0;
-			for (int i =0; i < values.size(); ++i) {
-				if (values[i].empty()){
-					if (b_input) index = 0;
-                    b_input = false;
-                    continue;
-				}
-                // cout << values[i] << " ";
-                if (b_input && index >= N_INPUT) {
-                    stringstream ess;
-                    ess << "Too many input values in pattern " << p_cnt;
-                    throw(ess.str()); 
-                }
-                if (!b_input && index >= M_OUTPUT) {
-                    stringstream ess;
-                    ess << "Too many teacher values in pattern " << p_cnt;
-                    throw(ess.str()); 
-                }                
-                if (b_input)  
-                    testPatterns_Input[p_test_cnt][index++] = stof(values[i]);
-                else testPatterns_Teacher[p_test_cnt][index++] = stof(values[i]);
-			}	
-			p_test_cnt++;
-            // cout << endl;
+//======================================================
+// Train RBF
+void trainRBF() {
+    // TODO: calculate rbf neuron output
+    // TODO: calculate output (weighted sum)
+    // TODO: calculate error and print into a output file "learningcurve.dat"
+    // TODO: calculate weight changes and update weight
+    // TODO: implement stopping criterion
+    calcRBFLayer();
+    calcOutput();
+    calcError();
+}
+
+void calcRBFLayer() {
+    // calculate gaussian bell function 
+    L_RBF.rbfNeurons[0].output = 1;
+    for (int k = 1; k < K_RBF+1; k++ ) {
+        float dist = 0;
+        float size = L_RBF.rbfNeurons[k].size; 
+        for (int n = 0; n < N_INPUT; n++) {
+            dist += pow(L_X.input[n] - L_RBF.rbfNeurons[k].center[n], 2);
         }
-	}
-    testFile.close();
-
-    // cout << "============================" << endl;
-    // cout << "test patterns" << endl;
-    // for (int i=0; i < p_test_cnt; i++) {
-    //     for (int j=0; j < N_INPUT; j++) {
-    //         cout << testPatterns_Input[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl << endl;
-    // for (int i=0; i < p_test_cnt; i++) {
-    //     for (int j=0; j < M_OUTPUT; j++) {
-    //         cout << testPatterns_Teacher[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // cout << endl << endl;
-*/
+        float r = exp(-dist/(2*pow(size,2)));
+        L_RBF.rbfNeurons[k].output = r;
+    }
+}
+void calcOutput() {
+    
+}
+void calcError() {
+    
 }

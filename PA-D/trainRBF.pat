@@ -1,5 +1,5 @@
 #WS1516_TNN_Assignment_PA-D_data_File_trainRBF.pat_sin(0.8*x*x+y*y)**2
-# P=1000    N=2    M=1   
+# P=999    N=2    M=1   
 -1.9596 -2  0.50343   
 -1.91919 -2  0.37926   
 -1.87879 -2  0.264944   
