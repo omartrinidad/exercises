@@ -325,7 +325,7 @@ void calcOutput() {
     for (int m = 1; m < M_OUTPUT+1; m++) {
         float weightedSum = 0;
         for (int k = 0; k < K_RBF+1; k++) {
-            weightedSum += L_RBF.rbfNeurons[k].output * W[k][m];
+            weightedSum += L_RBF.rbfNeurons[k].output * W.weight[k][m];
         }
         L_Y.outNeurons[m].output = weightedSum;
     }
