@@ -110,7 +110,6 @@ RBFLayer::RBFLayer() {
 // class: Output Layer & Neuron
 class OutputNeuron {
     public:
-        float netVal;
         float output;
         float teacher;
         float delta;
@@ -310,7 +309,7 @@ void trainRBF() {
 
 void calcRBFLayer() {
     // calculate gaussian bell function 
-    L_RBF.rbfNeurons[0].output = 1;
+    L_RBF.rbfNeurons[0].output = 1; // BIAS
     for (int k = 1; k < K_RBF+1; k++ ) {
         float dist = 0;
         float size = L_RBF.rbfNeurons[k].size; 
@@ -322,7 +321,14 @@ void calcRBFLayer() {
     }
 }
 void calcOutput() {
-    
+    // calculate output (weighted sum)
+    for (int m = 1; m < M_OUTPUT+1; m++) {
+        float weightedSum = 0;
+        for (int k = 0; k < K_RBF+1; k++) {
+            weightedSum += L_RBF.rbfNeurons[k].output * W[k][m];
+        }
+        L_Y.outNeurons[m].output = weightedSum;
+    }
 }
 void calcError() {
     
