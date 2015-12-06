@@ -7,7 +7,7 @@
     - To implement a RBF Network
 
 # Instruction
-    - 
+    - read "README.md"
 =========================================*/
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +64,8 @@ void calcOutput();
 float calcError();
 void printGNUPlotForm(string fileName, int patternNum, float error); // print error into GNUplot form
 void calcAndUpdateWeights();
+
+
 //======================================================
 
 
