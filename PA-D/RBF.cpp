@@ -206,6 +206,11 @@ int p_cnt = 0;      // start from 0
 int main(int argc, char** argv) {
     try {
         // arguments as filenames 
+        if (argc != 2) {
+            stringstream ess;
+            ess << "This program need an argument which refers to the training data file.";
+            throw(ess.str()); 
+        }
         trainingFileName = argv[1];
         
         loadDataFile();   // verify data files and load into memory
@@ -228,6 +233,12 @@ int main(int argc, char** argv) {
 // - check the number of input and teacher values each line
 void loadDataFile() {
 	ifstream trainingFile(trainingFileName);   // read training data file
+
+    if (!trainingFile) {
+        stringstream ess;
+        ess << "Wrong data file.";
+        throw(ess.str());
+    }
     if ( !trainingFile.eof() ) {
         int comment_cnt = 0;
         string line;
