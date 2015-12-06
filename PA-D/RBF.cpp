@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
         loadDataFile();   // verify data files and load into memory
         constructRBF();   // construct RBF and setting init data
                           // include weights 
-        //trainRBF();
+        trainRBF();
         
     } catch(const exception& e) {
         cerr << e.what();
