@@ -311,13 +311,13 @@ void trainRBF() {
 void calcRBFLayer() {
     // calculate gaussian bell function 
     L_RBF.rbfNeurons[0].output = 1;
-    for (k = 1; k < K_RBF+1; k++ ) {
+    for (int k = 1; k < K_RBF+1; k++ ) {
         float dist = 0;
         float size = L_RBF.rbfNeurons[k].size; 
-        for (n = 0; n < N_INPUT; n++) {
-            dist += pow(InputLayer.input[n] - L_RBF.rbfNeurons[k].center[n], 2)
+        for (int n = 0; n < N_INPUT; n++) {
+            dist += pow(L_X.input[n] - L_RBF.rbfNeurons[k].center[n], 2);
         }
-        r = exp(-dist/(2*pow(size,2)));
+        float r = exp(-dist/(2*pow(size,2)));
         L_RBF.rbfNeurons[k].output = r;
     }
 }
