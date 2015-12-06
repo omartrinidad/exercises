@@ -24,7 +24,7 @@ using namespace std;
 //======================================================
 // Setting Area
 #define N_INPUT 2       // Number of neurons in input layer
-#define K_RBF 25  	    // Number of neurons in RBF layer
+#define K_RBF 	16      // Number of neurons in RBF layer
                         // (K ^ N_INPUT) for uniform distribution
                         // e.g. when N_INPUT = 3, K_RBF = X ^ 3 (1,8,27, ...) 
 #define M_OUTPUT 1      // Number of neurons in output layer
@@ -297,12 +297,11 @@ void constructRBF() {
 
     /*
     for (int k = 1; k <= K_RBF; k++) {
-        cout << L_RBF.rbfNeurons[k].size << " --> ";
         cout << L_RBF.rbfNeurons[k].center[0] << " ";
-        cout << L_RBF.rbfNeurons[k].center[1] << endl;
+        cout << L_RBF.rbfNeurons[k].center[1] << "\n";
     }
     */
-    
+
     // initialize weights and assign random values 
     W = Weights();
     W.initWeights();
@@ -325,17 +324,40 @@ void setRBFCenterSize() {
     float stepSize = (upper - lower)/axis_x;
     float sigma = stepSize/2;
 
-    // avoid BIAS
-    int k = 1;
-
-    for (float x = lower + sigma; x <= upper; x += stepSize)  {
-        for (float y = lower + sigma; y <= upper; y += stepSize) {
-            L_RBF.rbfNeurons[k].center[0] = x;
-            L_RBF.rbfNeurons[k].center[1] = y;
-            L_RBF.rbfNeurons[k].size = sigma;
-            k++;
-        }
+    float temporal[K_RBF];
+    
+    float temp = lower + sigma;
+    for (int x = 0; x < axis_x; ++x)  {
+        temporal[x] = temp;
+        temp += stepSize;
     }
+
+    /*
+    temporal[0] = 0;
+    temporal[1] = 1;
+    temporal[2] = 2;
+    temporal[3] = 3;
+    */
+
+    for (int d = 0; d < N_INPUT; d++) {
+
+        int size = pow(axis_x, d);
+        int index = 0;
+
+        for (int k = 1; k <= K_RBF; k++) {
+
+            //cout << temporal[index] << "\t";
+
+            if (k % size == 0)
+                index == axis_x - 1 ? index = 0 : index++;
+            
+            L_RBF.rbfNeurons[k].size = sigma;
+            L_RBF.rbfNeurons[k].center[d] = temporal[index];
+
+        }
+        //cout << " " << endl;
+    }
+
 }
 
 
