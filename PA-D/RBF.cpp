@@ -24,7 +24,7 @@ using namespace std;
 //======================================================
 // Setting Area
 #define N_INPUT 2       // Number of neurons in input layer
-#define K_RBF 25   	    // Number of neurons in RBF layer
+#define K_RBF 25  	    // Number of neurons in RBF layer
                         // (K ^ N_INPUT) for uniform distribution
                         // e.g. when N_INPUT = 3, K_RBF = X ^ 3 (1,8,27, ...) 
 #define M_OUTPUT 1      // Number of neurons in output layer
@@ -292,6 +292,14 @@ void constructRBF() {
     
     // set RBF centers and sizes
     setRBFCenterSize();
+
+    /*
+    for (int k = 1; k <= K_RBF; k++) {
+        cout << L_RBF.rbfNeurons[k].size << " --> ";
+        cout << L_RBF.rbfNeurons[k].center[0] << " ";
+        cout << L_RBF.rbfNeurons[k].center[1] << endl;
+    }
+    */
     
     // initialize weights and assign random values 
     W = Weights();
@@ -308,16 +316,24 @@ void setRBFCenterSize() {
     
     float lower = -2;
     float upper = 2;
-    float stepSize = (upper - lower)/(N_INPUT + 1);
 
-    L_RBF.rbfNeurons->size = N_INPUT;
+    int axis_x = sqrt(K_RBF);
+    int axis_y = sqrt(K_RBF);
 
-    for (int x = 1; x <= N_INPUT ; x++ ) {
-        lower +=  stepSize;
-        L_RBF.rbfNeurons->center[x] = lower;
-        //cout << lower << endl;
+    float stepSize = (upper - lower)/axis_x;
+    float sigma = stepSize/2;
+
+    // avoid BIAS
+    int k = 1;
+
+    for (float x = lower + sigma; x <= upper; x += stepSize)  {
+        for (float y = lower + sigma; y <= upper; y += stepSize) {
+            L_RBF.rbfNeurons[k].center[0] = x;
+            L_RBF.rbfNeurons[k].center[1] = y;
+            L_RBF.rbfNeurons[k].size = sigma;
+            k++;
+        }
     }
-
 }
 
 
