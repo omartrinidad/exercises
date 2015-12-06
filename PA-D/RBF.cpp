@@ -61,7 +61,9 @@ void setRBFCenterSize();
 void trainRBF();
 void calcRBFLayer();
 void calcOutput();
-void calcError();
+float calcError();
+void printGNUPlotForm(string fileName, int patternNum, float error); // print error into GNUplot form
+void calcAndUpdateWeights();
 //======================================================
 
 
@@ -286,6 +288,7 @@ void constructRBF() {
     L_X = InputLayer();
     L_RBF = RBFLayer();
     L_Y = OutputLayer();
+    L_Y.setLearningRate(0.3);   // set learning rate
     
     // set RBF centers and sizes
     setRBFCenterSize();
@@ -326,9 +329,26 @@ void trainRBF() {
     // TODO: calculate error and print into a output file "learningcurve.dat"
     // TODO: calculate weight changes and update weight
     // TODO: implement stopping criterion
-    calcRBFLayer();
-    calcOutput();
-    calcError();
+    float error = 0;
+    for (int p = 0; p < p_cnt; p++) {
+        // read pattern
+        for (int i = 0; i < N_INPUT; i++) {
+            L_X.input[i] = trainData_Input[p][i];
+        }
+        for (int i = 1; i < M_OUTPUT+1; i++) {
+            L_Y.outNeurons[i].teacher = trainData_Teacher[p][i];
+        }
+        
+        calcRBFLayer();
+        calcOutput();
+        
+        error = calcError();
+        printGNUPlotForm("result_training.dat", p, error);
+        calcAndUpdateWeights();
+        
+        // stopping criterion
+        
+    }
 }
 
 void calcRBFLayer() {
@@ -354,6 +374,39 @@ void calcOutput() {
         L_Y.outNeurons[m].output = weightedSum;
     }
 }
-void calcError() {
+float calcError() {
+    float sum = 0;
+    float error = 0;
+    for (int m = 1; m < M_OUTPUT+1; m++) {
+        sum += pow(L_Y.outNeurons[m].teacher - L_Y.outNeurons[m].output, 2);
+    }
+    error = 0.5 * sum; //pow(sum, 4);
+
+    // cout << error << endl;
+    return error;
+}
+
+void printGNUPlotForm(string fileName, int patternNum, float error){
+    ofstream fout;
+    fout.open(fileName, ios::app);    // open file for appending
+    //assert (!fout.fail( ));     
     
+    fout << patternNum << "\t" << error << endl;
+    
+    fout.close( );       //close file
+    // assert(!fout.fail( ));
+}
+
+void calcAndUpdateWeights() {
+    //delta_weight = eta*diff*r
+    float learningRate = L_Y.learningRate;
+    
+    for (int k = 0; k < K_RBF + 1; k++) {
+        for (int m = 1; m < M_OUTPUT + 1; m++) {
+            W.weight_change[k][m] = learningRate 
+                            * (L_Y.outNeurons[m].teacher - L_Y.outNeurons[m].output)
+                            * L_RBF.rbfNeurons[k].output;
+            W.weight[k][m] += W.weight_change[k][m];
+        }
+    } 
 }
