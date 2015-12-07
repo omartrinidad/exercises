@@ -24,13 +24,13 @@ using namespace std;
 //======================================================
 // Setting Area
 #define N_INPUT 2       // Number of neurons in input layer
-#define K_RBF 	16      // Number of neurons in RBF layer
-                        // (K ^ N_INPUT) for uniform distribution
+#define K_RBF 	25      // Number of neurons in RBF layer
+                        // (n ^ N_INPUT) for uniform distribution
                         // e.g. when N_INPUT = 3, K_RBF = X ^ 3 (1,8,27, ...) 
 #define M_OUTPUT 1      // Number of neurons in output layer
 #define RND_SEED 5      // seed for Random number generator
 						// Weight values are initialized refer to the seed
-#define MAX_PATTERN 999
+#define MAX_PATTERN 1000
 //======================================================
 
 
@@ -54,18 +54,16 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 //======================================================
 // Declaring Functions
-void loadDataFile();
-void constructRBF();
-void setRBFCenterSize();
+void loadDataFile();        // load given training data file
+void constructRBF();        // construct RBF network
+void setRBFCenterSize();        // set RBF centers and sizes - used uniform distribution
 
-void trainRBF();
-void calcRBFLayer();
-void calcOutput();
-float calcError();
+void trainRBF();            // training RBF network with the loaded data
+void calcRBFLayer();            // calculate the result of RBF neurons
+void calcOutput();              // calculate the result of output neurons (weighted sum)
+float calcError();              // calculate of error for the pattern data
 void printGNUPlotForm(string fileName, int patternNum, float error); // print error into GNUplot form
-void calcAndUpdateWeights();
-
-
+void calcAndUpdateWeights();    // calculate weight change and update the weight
 //======================================================
 
 
@@ -284,94 +282,89 @@ void loadDataFile() {
 
 //======================================================
 // Construct RBF
+//  . set layers and neurons
+//  . set RBF centers and sizes
+//  . assign random values to weights 
 void constructRBF() {
 
     // set Layers and neurons 
     L_X = InputLayer();
     L_RBF = RBFLayer();
     L_Y = OutputLayer();
-    L_Y.setLearningRate(0.3);   // set learning rate
+    L_Y.setLearningRate(0.8);   // set learning rate
     
     // set RBF centers and sizes
     setRBFCenterSize();
 
-    /*
-    for (int k = 1; k <= K_RBF; k++) {
-        cout << L_RBF.rbfNeurons[k].center[0] << " ";
-        cout << L_RBF.rbfNeurons[k].center[1] << "\n";
-    }
-    */
-
     // initialize weights and assign random values 
     W = Weights();
     W.initWeights();
-
 }    
 
 // set RBF centers and sizes
 void setRBFCenterSize() {
     // TODO: implement setting centers and sizes for RBF neurons.
-    // option 1. uniform distribution - easiest
-    // option 2. statistical analysis
-    // option 3. subset of data - not recommended
+    // uniform distribution
     
-    float lower = -2;
-    float upper = 2;
-
-    int axis_x = sqrt(K_RBF);
-    int axis_y = sqrt(K_RBF);
-
-    float stepSize = (upper - lower)/axis_x;
+    // define range (lower and upper) 
+    float lower = 999999999999.;
+    float upper = -999999999999.;
+    for (int p=0; p < p_cnt; p++) {
+        float tmp = 0;
+        for (int i = 0; i < N_INPUT; i ++) {
+            tmp = trainData_Input[p][i];
+            if (tmp < lower) lower = tmp;
+            if (tmp > upper) upper = tmp;
+        }        
+    }
+    
+    // get the number of neurons in a dimension
+    float axis = pow(K_RBF, 1./N_INPUT);
+    if (floorf(axis) != axis) {
+        stringstream ess;
+        ess << "K_RBF must be defined as (n ^ N_INPUT) where n is a natural number.";
+        throw(ess.str());         
+    }
+    
+    // get the center points and sizes for 1-dimension space
+    float stepSize = (upper - lower)/axis;
     float sigma = stepSize/2;
 
     float temporal[K_RBF];
     
     float temp = lower + sigma;
-    for (int x = 0; x < axis_x; ++x)  {
+    for (int x = 0; x < (int)axis; ++x)  {
         temporal[x] = temp;
         temp += stepSize;
     }
 
-    /*
-    temporal[0] = 0;
-    temporal[1] = 1;
-    temporal[2] = 2;
-    temporal[3] = 3;
-    */
-
+    // expand the result to N-dimensions
     for (int d = 0; d < N_INPUT; d++) {
-
-        int size = pow(axis_x, d);
+        int size = pow(axis, d);
         int index = 0;
 
         for (int k = 1; k <= K_RBF; k++) {
-
-            //cout << temporal[index] << "\t";
-
             if (k % size == 0)
-                index == axis_x - 1 ? index = 0 : index++;
+                index == (int)axis - 1 ? index = 0 : index++;
             
             L_RBF.rbfNeurons[k].size = sigma;
             L_RBF.rbfNeurons[k].center[d] = temporal[index];
-
         }
-        //cout << " " << endl;
     }
-
 }
 
 
 //======================================================
 // Train RBF
+//  . calculate rbf neuron output
+//  . calculate output (weighted sum)
+//  . calculate error and print into a output file "learningcurve.dat"
+//  . calculate weight changes and update weight 
 void trainRBF() {
-    // TODO: calculate rbf neuron output
-    // TODO: calculate output (weighted sum)
-    // TODO: calculate error and print into a output file "learningcurve.dat"
-    // TODO: calculate weight changes and update weight
-    // TODO: implement stopping criterion
     float error = 0;
-    for (int p = 0; p < p_cnt; p++) {
-        // read pattern
+    // loop for patterns
+    for (int p = 0; p < p_cnt; p++) {   	
+        // read pattern - input and teacher
         for (int i = 0; i < N_INPUT; i++) {
             L_X.input[i] = trainData_Input[p][i];
         }
@@ -379,15 +372,18 @@ void trainRBF() {
             L_Y.outNeurons[i].teacher = trainData_Teacher[p][i];
         }
         
-        calcRBFLayer();
-        calcOutput();
+        // decaying of learning rate
+        L_Y.setLearningRate(L_Y.learningRate * 0.90);
         
+        // calculate rbf neuron output
+        calcRBFLayer();
+        // calculate output (weighted sum)
+        calcOutput();
+        // calculate error value
         error = calcError();
         printGNUPlotForm("result_training.dat", p, error);
+        // calculate weights and update 
         calcAndUpdateWeights();
-        
-        // stopping criterion
-        
     }
 }
 
@@ -415,14 +411,14 @@ void calcOutput() {
     }
 }
 float calcError() {
+    // calculate error - quadratic
     float sum = 0;
     float error = 0;
     for (int m = 1; m < M_OUTPUT+1; m++) {
         sum += pow(L_Y.outNeurons[m].teacher - L_Y.outNeurons[m].output, 2);
     }
-    error = 0.5 * sum; //pow(sum, 4);
+    error = 0.5 * sum;
 
-    // cout << error << endl;
     return error;
 }
 
