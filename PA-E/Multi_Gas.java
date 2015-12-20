@@ -136,7 +136,8 @@ public class Multi_Gas {
     		}
     		System.out.printf("Winner Gas is %d\n", winnerGasIndex);
 			// generate sorted list respect to the response of the nuerons in the winner gas
-			//gas[winnerGasIndex]
+			gas[winnerGasIndex].generateSortedList();
+			gas[winnerGasIndex].learn(learningRate, gaussianSize, patterns[t]);
     	}
     }
     
@@ -237,6 +238,33 @@ public class Multi_Gas {
     				this.shortestDistance = dist;
     			}
     		}
+		}
+    	
+    	/**
+    	 * 
+    	 */
+    	private void generateSortedList() {
+    		// TODO : check it works properly.
+    		// sort neurons and store the list into sortedNeurons
+    		this.sortedNeurons = this.neurons;
+    		Collections.sort(sortedNeurons, new CustomComparator());
+    	}
+    	
+    	private void learn(double learningRate, double gaussianSize, double[] stimulus) {
+    		for (int i = 0; i < sortedNeurons.length; i++) {
+    			// TODO: calculate h (neighborhood function)
+    			double h = 1;
+    			
+    			double[] movingFactor = learningRate * h * sortedNeurons[i].calculateDiff(stimulus);  
+    			neurons[sortedNeurons[i].initialIndex].movePosition(movingFactor);
+    		}
+    	} 
+    	
+    	public class CustomComparator implements Comparator<Neuron> {
+    	    @Override
+    	    public int compare(Neuron o1, Neuron o2) {
+    	        return o1.distanceToStimulus.compareTo(o2.distanceToStimulus);
+    	    }
     	}
     }
     
@@ -300,6 +328,17 @@ public class Multi_Gas {
             this.distanceToStimulus = Math.sqrt(sum);
             
         	return this.distanceToStimulus;
+        }
+        /**
+         * calculation vector diff between center and stimulus
+         */
+        private double[] calculateDiff(double[] stimulus) {
+        	double[] diff = new double[stimulus.length];
+        	for (int i=0; i < stimulus.length; i++) {
+        		diff[i] = this.center[i] - stimulus[i];
+        	}
+        	
+        	return diff;
         }
     }
 }
