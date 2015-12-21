@@ -1,31 +1,35 @@
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.*;
 import java.io.*;
 
 /**
  * @author      Shinho Kang, 					2890169,	wis.shinho.kang@gmail.com
  * @author 		Omar Trinidad Gutierrez Mendez,	2850441,	omar.vpa@gmail.com
  * 
+ * Compile : javac Multi_Gas.java
+ * execute : java Multi_Gas
+ * 
+ * This program print out 2 files.
+ *  - "PA-E.net" : the final position of the centers 
+ *  - "PA-E_patterns.net" : read or generated input patterns
  */
 public class Multi_Gas {
 	/**
 	 * Variables
 	 */
-
     private final int M;				// number of gases (partners)
     private final int[] neuronsInGas;	// the number of neurons in each gas(partner)
     private final int N;				// input dimension & center vector dimension
     
-    private Gas[] gas;
+    private Gas[] gas;				// partner gases
     private double[][] patterns;	// pattern data
     
-    private final double learningRateInit = 0.5;	// learning rate - initial
-    private final double learningRateEnd = 0.001;	// learning rate - end
-    private final double gaussianSize = 0.5;		// gaussian bell size (for neighborhood function)
-    private int tMax = 10000;						// max training number.
-    										// for implementing decaying of learning rate 
-    										// and gaussian size
+    private final double learningRateInit = 0.8;	// learning rate - initial
+    private final double learningRateEnd = 0.01;	// learning rate - end
+    private final double gaussianSize = 0.8;		// gaussian bell size (for neighborhood function)
+    private int tMax = 2000;						// max training number.
+    												// for implementing decaying of learning rate 
     
     /**
      * constructor : initialize variables
@@ -34,6 +38,7 @@ public class Multi_Gas {
     	this.M = M;
     	this.neuronsInGas = neuronsInGas;
     	this.N = N;
+
     	// initilize gas groups
     	gas = new Gas[M];
     	for (int m = 0; m < M; m++) {
@@ -83,6 +88,54 @@ public class Multi_Gas {
 			System.exit(0);
 		}
     }
+    
+    /**
+     * generate patterns drawn randomly, 
+     * equally distributed from 3 non-overlapping areas  
+     */
+    private void generatePatterns() {
+    	// N = 2
+    	patterns = new double[tMax][2];
+    	
+    	Random rand_area = new Random();
+    	Random rand_x = new Random();
+    	Random rand_y = new Random();
+    	
+    	// Initialize center with random values
+        double min = 0.0;
+        double max = 1.0;
+    	
+    	// 3 non-overlapping areas: {0.0, 0.33} {0.4, 0.8}, {0.33
+    	for (int t=0; t < tMax; t++) {
+            int area = rand_area.nextInt(9) % 3;	// area 0~2
+            
+    		switch (area) {
+    		case 0:
+    			min = 0.8;
+    			max = 1.0;
+    			break;
+    		case 1:
+    			min = 0.3;
+    			max = 0.7;
+    			break;
+    		case 2:
+    			min = 0.0;
+    			max = 0.25;
+    			break;
+    		}
+    		
+    		double x = rand_x.nextDouble() * (max - min) + min;
+    		double y = rand_y.nextDouble() * (max - min) + min;
+//    		System.out.printf("[%d] %f %f\n", area, x, y);
+    		
+    		patterns[t][0] = x;
+    		patterns[t][1] = y;
+    	}
+
+    	printPatterns("PA-E_patterns.net");    	
+    	
+    }
+    
 
     /**
      * print out center positions into a file.
@@ -106,6 +159,22 @@ public class Multi_Gas {
 		}
     }
 
+    private void printPatterns(String printFileName) {
+    	try {
+			PrintWriter fout = new PrintWriter(new BufferedWriter(
+					new FileWriter(printFileName)));
+			for (int t = 0; t < tMax; t++) {
+				for (int n = 0; n < N; n++) {
+					fout.printf("%f ", patterns[t][n]); 
+				}
+				fout.printf("\n");
+			}
+			fout.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
     /**
      * train multi-gas by stimulus
      * 
@@ -116,10 +185,13 @@ public class Multi_Gas {
      * - move the neurons in the winner gas
      */
     private void train() {
+    	// for each stimulus
     	for (int t=0; t < tMax; t++) {
     		System.out.printf("Epoch: %d\n", t);
+    		
     		int winnerGasIndex = 0;
     		double tmpShortestDist = 0;
+    		
     		for (int m=0; m < M; m++) {
     			// calculate all the responses in the gas
     			gas[m].calcResponses(patterns[t]);
@@ -135,10 +207,18 @@ public class Multi_Gas {
     			System.out.printf("-%d : %f\n", m, gas[m].shortestDistance);
     		}
     		System.out.printf("Winner Gas is %d\n", winnerGasIndex);
+    		
 			// generate sorted list respect to the response of the nuerons in the winner gas
 			gas[winnerGasIndex].generateSortedList();
-			gas[winnerGasIndex].learn(learningRate, gaussianSize, patterns[t]);
+			// learn by stimulus only for neurons of winner gas
+			gas[winnerGasIndex].learn(t, learningRate(t), gaussianSize, patterns[t]);
     	}
+    }
+    /**
+     * decaying of learningRate by training epochs
+     */
+    private double learningRate(int t) {
+    	return learningRateInit * Math.pow((learningRateEnd / learningRateInit), (t * 1.0 / tMax));
     }
     
     /**
@@ -155,32 +235,31 @@ public class Multi_Gas {
 		if(args.length > 0 &&  !args[0].isEmpty()) {
 			patternFileName = args[0];
 		}
-//        System.out.print(patternFileName);	
 
 		// Setting variables        
 		int M = 4;	// number of gases (partners)
-		int[] neuronsInGas = { 5, 7, 10, 3 };	// the number of neurons in each gas(partner)
+		int[] neuronsInGas = { 7, 5, 6, 7 };	// the number of neurons in each gas(partner)
 		int N = 2;	// input dimension & center vector dimension
+		
 		
 		// construct Multi Gas - Gases, neurons, centers
 		Multi_Gas multiGas = new Multi_Gas(M, neuronsInGas, N);
 		// initialize centers of the neurons
 		multiGas.initCenters();
+
+		// read given data file - uncomment this to read patterns from data file 
+		//multiGas.readFile(patternFileName);
 		
-		// read given data file 
-		multiGas.readFile(patternFileName);
-		
+		// to generate random patterns on 3-non overlapping areas
+		// uncomment this to generate random pattern data
+		multiGas.generatePatterns();
+
 		// train by stimulus
 		multiGas.train();
-		
+
 		// print out positions of centers
 		multiGas.printCenters("PA-E.net");
-//		
-      
     }
-    
-    
-    
     
     
     /**
@@ -188,9 +267,10 @@ public class Multi_Gas {
      *  - include Neurons
      */
     public class Gas {
-    	private Neuron[] neurons;
+    	private Neuron[] neurons;	 
     	private double shortestDistance;	// shortest distance between the neuron in the gas and the stimulus
-    	private Neuron[] sortedNeurons;		// neurons which are sorted by distance 
+    	private Pair[] sortedNeuronIndex;  
+    	
     	/**
     	 * constructor
     	 * 
@@ -200,7 +280,7 @@ public class Multi_Gas {
     	public Gas(int neuronsInGas, int N) {
     		this.neurons = new Neuron[neuronsInGas];
 
-    		// to initialize each neuron. 
+    		// to initialize neurons in the gas. 
     		for (int i = 0 ; i < neuronsInGas; i++) {
     			neurons[i] = new Neuron(i, N);
     		}
@@ -213,13 +293,13 @@ public class Multi_Gas {
     	    for (int i = 0; i < neurons.length; i++) {
     	    	int N = neurons[i].center.length;
     	    	double[] rand_position = new double[N];
-        		
-    	    	/* Initialize Ck with random values */
+        		Random rand = new Random();
+    	    	/* Initialize center with random values */
     	        double min = 0.0;
     	        double max = 1.0;
 
     	        for (int n = 0; n < N; n++) {
-    	        	rand_position[n] = Math.random() * (max - min) + min;
+    	        	rand_position[n] = rand.nextDouble() * (max - min) + min;
     	        }
     	    	neurons[i].setPosition(rand_position);
     		}
@@ -241,29 +321,70 @@ public class Multi_Gas {
 		}
     	
     	/**
-    	 * 
+    	 * sort neurons respect to the distance
+    	 * closest neuron is positioned on 0. 
     	 */
     	private void generateSortedList() {
-    		// TODO : check it works properly.
-    		// sort neurons and store the list into sortedNeurons
-    		this.sortedNeurons = this.neurons;
-    		Collections.sort(sortedNeurons, new CustomComparator());
+    		// use Pair class and custom compare method
+    		sortedNeuronIndex = new Pair[neurons.length];
+    		for (int i=0; i < neurons.length; i++) {
+    			sortedNeuronIndex[i] = new Pair(neurons[i].initialIndex, neurons[i].distanceToStimulus);
+    		}
+    		Arrays.sort(sortedNeuronIndex);
+    		
+    		// to check
+    		for (int i=0; i < neurons.length; i++) {
+    			System.out.printf("[%d]%f ", sortedNeuronIndex[i].index, sortedNeuronIndex[i].distance); 
+    		}
     	}
     	
-    	private void learn(double learningRate, double gaussianSize, double[] stimulus) {
-    		for (int i = 0; i < sortedNeurons.length; i++) {
-    			// TODO: calculate h (neighborhood function)
-    			double h = 1;
+    	/**
+    	 * learn by stimulus
+    	 * 
+    	 * @param t training epoch
+    	 * @param learningRate decayed learning rate
+    	 * @param gaussianSize size for gaussian function 
+    	 * @param stimulus selected stimulus
+    	 */
+    	private void learn(int t, double learningRate, double gaussianSize, double[] stimulus) {
+    		System.out.printf("\nstimulus: [%f, %f]\n",  stimulus[0], stimulus[1]);
+    		// learn by sorted order
+    		for (int i = 0; i < sortedNeuronIndex.length; i++) {
+    			// calculate neighborhood function (gaussian function)
+    			double h = Math.exp(-Math.pow(i, 2) / (2 * Math.pow(gaussianSize, 2)));
     			
-    			double[] movingFactor = learningRate * h * sortedNeurons[i].calculateDiff(stimulus);  
-    			neurons[sortedNeurons[i].initialIndex].movePosition(movingFactor);
+    			int originIndex = sortedNeuronIndex[i].index;	
+    			// calculate difference between center and stimulus
+    			double[] movingFactor = neurons[originIndex].calculateDiff(stimulus);
+    			
+    			System.out.printf("[%d] neuron : [%f, %f], dist : %f\n", originIndex, neurons[originIndex].center[0]
+    					,neurons[originIndex].center[1], neurons[originIndex].distanceToStimulus);
+    			System.out.printf("  move: [%f, %f], rate: %f\n", movingFactor[0],movingFactor[1],learningRate * h); 
+
+    			// move neuron (update)  
+    			neurons[originIndex].movePosition(movingFactor, learningRate * h);
+    			System.out.printf(" -> moved: [%f, %f]\n", neurons[originIndex].center[0], neurons[originIndex].center[1]);
     		}
     	} 
     	
-    	public class CustomComparator implements Comparator<Neuron> {
+    	/**
+    	 * Pair class
+    	 *  include index and distance
+    	 *  implement override compareTo method
+    	 */
+    	public class Pair implements Comparable<Pair> {
+    	    public final int index;
+    	    public final double distance;
+
+    	    public Pair(int index, double distance) {
+    	        this.index = index;
+    	        this.distance = distance;
+    	    }
+
     	    @Override
-    	    public int compare(Neuron o1, Neuron o2) {
-    	        return o1.distanceToStimulus.compareTo(o2.distanceToStimulus);
+    	    public int compareTo(Pair other) {
+    	        //multiplied to -1 as the author need descending sort order
+    	    	return 1 * Double.valueOf(this.distance).compareTo(other.distance);
     	    }
     	}
     }
@@ -288,7 +409,9 @@ public class Multi_Gas {
         	center = new double[N];
         }
         
-
+        /**
+         * return center position
+         */
         private double[] getCenter() {
             return center;
         }
@@ -296,30 +419,23 @@ public class Multi_Gas {
          * move center to the given position
          */
         private void setPosition(double[] position) {
-        	if (center.length != position.length) {
-        		//throw new Exception("length error");
-        	}
         	center = position;
         }
         /**
-         * move center by adding movingFactor
+         * move center by adding movingFactor * rate
          */
-        private void movePosition(double[] movingFactor) {
-        	if (center.length != movingFactor.length) {
-        		//throw new Exception("length error");
-        	}
+        private void movePosition(double[] movingFactor, double rate) {
         	for (int i = 0; i < movingFactor.length; i++) {
-        		center[i] += movingFactor[i];
+        		center[i] += movingFactor[i] * rate;
         	}
         }
         
         /**
          * calculate the euclidean distance between center and stimulus
+         * store the distance and return
          */
         private double calculateDistance(double[] stimulus) {
         	this.distanceToStimulus = 0;
-        	
-        	// TODO: implement calculation of distance
         	double sum = 0.0;
 
             for(int i=0; i < stimulus.length; i++) {
@@ -335,7 +451,7 @@ public class Multi_Gas {
         private double[] calculateDiff(double[] stimulus) {
         	double[] diff = new double[stimulus.length];
         	for (int i=0; i < stimulus.length; i++) {
-        		diff[i] = this.center[i] - stimulus[i];
+        		diff[i] = stimulus[i] - this.center[i];
         	}
         	
         	return diff;
