@@ -13,6 +13,12 @@ import java.io.*;
  * This program print out 2 files.
  *  - "PA-E.net" : the final position of the centers 
  *  - "PA-E_patterns.net" : read or generated input patterns
+ *  
+ * To set variables - see main() method
+ * 
+ * To test randomly distributed patterns, 
+ * set N = 2 and uncomment the line 258 (multiGas.generatePatterns();)
+ *  
  */
 public class Multi_Gas {
 	/**
