@@ -26,3 +26,13 @@
 *.exe
 *.out
 *.app
+
+# nested folders
+bin/
+CMakeFiles/
+images/
+*.cmake
+CMakeCache.txt
+# ignore LateX files
+*.aux
+*.log
