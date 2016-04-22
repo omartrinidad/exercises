@@ -1,0 +1,33 @@
+Implement your solution in the file sheet01.cpp in the src directory.
+Again the basic structure of the program is already given. There is quite
+a lot of code to help you implement the final solution. Try to read and
+understand the source code gist. All necessary header files are already
+included.
+
+Basically you can fill in your own source code wherever you see "TODO"
+
+If you have problems understanding the existing code you can also delete
+the helping functions (just use them for inspiration) and implement them
+from scratch. But make sure that you don't mess up the overall structure
+of the program.
+
+Every tasks begins with 
+	cout << "Task ...:" << endl;
+and ends with
+	waitKey(0);
+	destroyAllWindows();	
+
+which forces the program to wait and and draw all images called by "imshow"
+until the user hits a button and then proceeds with the next task.
+
+Compile your program (from within the src directory):
+	cmake -G "Unix Makefiles"
+	make
+	./bin/sheet01 ../images/bonn.png
+
+
+Please provide any other information required to run your program here...
+Your group members:
+	- Omar Trinidad Gutierrez Mendez, 2850441, omar.vpa@gmail.com 
+	- Shinho Kang, 2890169, wis.shinho.kang@gmail.com
+
