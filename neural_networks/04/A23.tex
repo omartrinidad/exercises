@@ -1,0 +1,63 @@
+\documentclass[fleqn]{article}
+
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{titlesec}
+
+\begin{document}
+  
+\section{Assignment 23}
+
+\begin{equation*}
+\begin{aligned}
+^{ p }\Delta w_{ s } & =-\eta \frac { \partial ^{ p }E^{ ** }(W_{ s }) }{ \partial w_{ s } } \\
+^{ p }E^{ ** } & =\frac { 1 }{ 2 } \sum _{ m=1 }^{ M } (^{ p }\hat { Y_{ m } } -^{ p }Y_{ m })^{ 2 }+\beta \frac { 1 }{ 2 } \sum _{ i,j } (w_{ ij })^{ 2 } \\
+\end{aligned}
+\end{equation*}
+
+\noindent 1. Derivation for an output neuron m.
+
+\begin{equation*}
+\begin{aligned}
+\frac { \partial ^{ p }E^{ ** } }{ \partial w_{ hm } }  & =\frac { \partial ^{ p }E^{ ** } }{ \partial ^{ p }net_{ m } } \cdot \frac { \partial ^{ p }net_{ m } }{ \partial w_{ hm } } \\
+& \frac { \partial ^{ p }net_{ m } }{ \partial w_{ hm } }  = \frac { \partial  }{ \partial w_{ ij } } \sum _{ g=0 }^{ H } { ^{ p } \widetilde { out_{ g } } \cdot { w_{ gm } }} =^{ p } \widetilde { out_{ h } } \\
+\end{aligned}
+\end{equation*}
+\begin{equation*}
+\begin{aligned}
+\frac { \partial ^{ p }E^{**} }{ \partial ^{ p }net_{ m } } & =\frac { \partial ^{ p }E^{**} }{ \partial ^{ p }y_{ m } } \cdot \frac { \partial ^{ p }y_{ m } }{ \partial ^{ p }net_{ m } }\\\\
+& \frac { \partial ^{ p }y_{ m } }{ \partial ^{ p }net_{ m } } =\frac { \partial f(^{ p }net_{ m }) }{ \partial ^{ p }net_{ m } } =f^{ ' }(^{ p }net_{ m })\\\\
+& \frac { \partial ^{ p }E^{**} }{ \partial ^{ p }y_{ m } } =\frac { \partial  }{ \partial ^{ p }y_{ m } } \frac { 1 }{ 2 } \sum _{ j=1 }^{ M } (^{ p }\hat { y_{ j } } -^{ p }y_{ j })^{ 2 } + \frac { \partial  }{ \partial ^{ p }y_{ m } } \beta \frac{1}{2} \sum_{i,j}{(w_{ij})^{2}}\\
+& = \frac { 1 }{ 2 } \frac { \partial  }{ \partial ^{ p }y_{ m } } (^{ p }\hat { y_{ m } } -^{ p }y_{ m })^{ 2 } + 0\\
+&= \frac { 1 }{ 2 } 2 (^{ p }\hat { y_{ m } } -^{ p }y_{ m })       \frac { \partial  }{ \partial ^{ p }y_{ m } } (-y_m) \\
+&= (^{ p }\hat { y_{ m } } -^{ p }y_{ m }) \cdot (-1)\\
+&= -(^{ p }\hat { y_{ m } } -^{ p }y_{ m })\\\\
+\end{aligned}
+\end{equation*}
+
+Now, we get weight change formula - delta-rule.
+\begin{equation*}
+\begin{aligned}
+^{ p }\Delta w_{ s } & =\eta \cdot (^{ p }\hat { y_{ m } } -^{ p }y_{ m }) \cdot f^{ ' }(^{ p }net_{ m })
+\cdot ^{ p } \widetilde { out_{ h } } \\
+^{ p }\Delta w_{ hm } & =\eta \cdot ^p \delta^{**} _m \cdot ^{ p } \widetilde { out_{ h } } \\
+& where, \:\:\: ^p \delta^{**} _m = -\frac { \partial ^{ p }E^{**} }{ \partial ^{ p }net_{ m } }
+\end{aligned}
+\end{equation*}
+
+\noindent 2. Derivation for a hidden neuron h.
+
+\begin{equation*}
+\begin{aligned}
+^{ p }\Delta w_{ gh } =\eta \cdot ^p \delta^{**} _h \cdot ^{ p } \widetilde { out_{ g } } \\
+-^p \delta^{**} _h &= \frac { \partial ^{ p }E^{**} }{ \partial ^{ p }net_{ h } }\\
+&= \frac { \partial ^{ p }E^{**} }{ \partial ^{ p }out_{ h } } \cdot f^{ ' }(^{ p }net_{ h })     \\
+&= \sum_{k=1}^{K} (\frac { \partial ^{ p }E^{**} }{ \partial \underline { net_k }  }\frac{ \partial \underline { net_k } }{ \partial ^{ p }out_{ h } }) \cdot f^{ ' }(^{ p }net_{ h })\\
+&= -\sum_{k=1}^{K} (\underline{\delta^{**}}_k \cdot \underline{w_{hk}}) \cdot f^{ ' }(^{ p }net_{ h })\\
+\end{aligned}
+\end{equation*}
+
+\end{document}
