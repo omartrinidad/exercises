@@ -31,18 +31,20 @@ while True:
         break
 
 while True:
-    notation = raw_input("Enter the rule in Wolfram Notation (e.g. 250): ")
+    neighborhood = 2 * radius + 1
+    states_neighborhood = 2 ** neighborhood
+    possible_rules = 2 ** states_neighborhood
+    notation = raw_input("Enter the rule in Wolfram Notation, in the range "\
+            "1-%s: " % possible_rules)
     try:
         notation = int(notation)
-        if notation < 1 or notation > 255:
-            print("The notation must in the range 1 or 255")
+        if notation < 1 or notation > possible_rules:
+            print("The notation must in the range 1 or %s" % possible_rules)
         else:
             break
     except ValueError as e:
         print("The notation must beetwen 1 or 255")
 
-neighborhood = 2 * radius + 1
-states_neighborhood = 2 ** neighborhood
 
 rule_binary = "{0:b}".format(notation)
 rule_binary = rule_binary.zfill(states_neighborhood)
