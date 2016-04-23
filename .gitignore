@@ -36,3 +36,6 @@ CMakeCache.txt
 # ignore LateX files
 *.aux
 *.log
+
+#macOS
+.DS_Store
