@@ -1,3 +1,5 @@
-# Exercise repo for CV and TNN
+# Exercises
 
-Exercises for CV and TNN
+- Computer Vision
+- Technical Neural Networks
+- Artificial Life
