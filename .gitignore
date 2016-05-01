@@ -39,3 +39,4 @@ CMakeCache.txt
 
 #macOS
 .DS_Store
+.idea/
