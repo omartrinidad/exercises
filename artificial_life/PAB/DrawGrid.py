@@ -3,9 +3,74 @@ Shinho
 @brief get parameter (matrix instance), and draw it to the grid.
 '''
 from Tkinter import Tk, Canvas, Frame, BOTH
+#from Grid import Langton
 
 import numpy as np
 import random
+
+class Langton(object):
+
+    def __init__(self, grid, start, orientation='up', conf='white'):
+        """
+        Initialize parameters
+        """
+        self.rows = grid[0]
+        self.cols = grid[1]
+        self.orientation = orientation
+        self.conf = conf
+        self.current = start
+        self.grid = np.zeros((self.rows, self.cols), dtype=int)
+
+    def findNextCell(self):
+        pass
+
+    def currentVal(self):
+        return self.grid[self.current]
+
+    def next(self):
+
+        print self.current, self.orientation
+
+        # scan and turn
+        print self.currentVal()
+        print self.currentVal() == 1
+
+        if self.currentVal() == 1:
+            # black
+            print 'white'
+            if self.orientation == 'up':
+                self.orientation = 'left'
+            elif self.orientation == 'left':
+                self.orientation = 'down'
+            elif self.orientation == 'down':
+                self.orientation = 'right'
+            elif self.orientation == 'right':
+                self.orientation = 'up'
+
+        else:
+            # white
+            print 'white'
+            if self.orientation == 'up':
+                self.orientation = 'right'
+            elif self.orientation == 'right':
+                self.orientation = 'down'
+            elif self.orientation == 'down':
+                self.orientation = 'left'
+            elif self.orientation == 'left':
+                self.orientation = 'up'
+
+        # flip
+        self.grid[self.current] = 1 if self.grid[self.current] == 0 else 0
+
+        # move
+        if self.orientation == 'up':
+            self.current = (self.current[0] - 1, self.current[1])
+        elif self.orientation == 'down':
+            self.current = (self.current[0] + 1, self.current[1])
+        elif self.orientation == 'right':
+            self.current = (self.current[0], self.current[1] + 1)
+        elif self.orientation == 'left':
+            self.current = (self.current[0], self.current[1] - 1)
 
 
 class DrawGrid(Frame):
@@ -55,10 +120,11 @@ def draw(mat):
     root.mainloop()
 
 
-if __name__ == "__main__":
-    k = np.zeros((101, 82), dtype=np.int)
-    k[0, 0] = 1
-    k[100, 81] = 1
-    test = np.matrix(k)
+#if __name__ == "__main__":
 
+my_torus = Langton((101, 82), (50, 40), 'left', 'white')
+
+for i in range(11):
+    my_torus.next()
+    test = np.matrix(my_torus.grid)
     draw(test)
