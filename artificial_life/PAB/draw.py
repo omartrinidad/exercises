@@ -28,10 +28,10 @@ class Example(Frame):
         self.parent = parent
         self.initUI()
 
-    def draw(self):
-        # draw the board according to the current state
-        # arrange for the next frame to draw in 4 seconds
-        self.after(4000, self.draw)
+    # def draw(self):
+    #     # draw the board according to the current state
+    #     # arrange for the next frame to draw in 4 seconds
+    #     self.after(4000, self.draw)
 
     def initUI(self):
         self.parent.title("TNN visualization")
@@ -63,6 +63,7 @@ class Example(Frame):
 
 def main():
     root = Tk()
+    # print (root)
     ex = Example(root)
     root.mainloop()
 
