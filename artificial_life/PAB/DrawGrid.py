@@ -20,10 +20,8 @@
 """
 
 from Tkinter import Tk, Canvas, Frame, BOTH
-#from Grid import Langton
 
 import numpy as np
-import random
 import sys
 
 class Langton(object):
@@ -114,10 +112,12 @@ class Langton(object):
 
 
 class DrawGrid(Frame):
-    def __init__(self, parent, mat):
+    def __init__(self, parent, langton_ant):
         Frame.__init__(self, parent)
         self.parent = parent
         self.pack(fill=BOTH, expand=1)
+
+        self.title = self.parent.title()
 
         self.rows = 101
         self.columns = 82
@@ -138,26 +138,21 @@ class DrawGrid(Frame):
                 self.rect[row, column] = self.canvas.create_rectangle(x1, y1, x2, y2, fill="white", tags="rect",
                                                                       outline="black")
 
-        self.data = mat
+        self.langton_ant = langton_ant
         self.draw_result(500)
 
-    def draw_result(self, delay):
+    def draw_result(self, delay, i=0):
+        self.parent.title(self.title+" step: " + str(i))
         self.canvas.itemconfig("rect", fill="white")
 
-        nonzero_idx = self.data.nonzero()
+        data = np.matrix(self.langton_ant.grid)
+        nonzero_idx = data.nonzero()
         for row,col in zip(nonzero_idx[0], nonzero_idx[1]):
             item_id = self.rect[row, col]
-            self.canvas.itemconfig(item_id, fill="red")
+            self.canvas.itemconfig(item_id, fill="black")
 
-        # self.after(delay, lambda: self.redraw(delay))
-
-
-def draw(mat):
-
-    root = Tk()
-    root.title("test abc")
-    ex = DrawGrid(root, mat)
-    root.mainloop()
+        self.langton_ant.next()
+        self.after(delay, lambda: self.draw_result(delay, i+1))
 
 
 if __name__ == "__main__":
@@ -175,7 +170,7 @@ if __name__ == "__main__":
         try:
             conf = int(conf)
             if conf < 1 or conf > 5:
-                print("The radius must be 1 or 2")
+                print("Choose a number beetwen 1 and 5")
             else:
                 dict = {
                         1: 'white', 2: 'black', 3: 'checker',
@@ -206,7 +201,7 @@ if __name__ == "__main__":
         x = raw_input("Enter the position X: ")
         try:
             x = int(x)
-            if x < 0 or x > 82:
+            if x < 1 or x > 82:
                 print("The position X must be in the range 1 and 82")
             else:
                 x = x - 1
@@ -218,7 +213,7 @@ if __name__ == "__main__":
         y = raw_input("Enter the position Y: ")
         try:
             y = int(y)
-            if y < 0 or y > 101:
+            if y < 1 or y > 101:
                 print("The position Y must be in the range 1 and 101")
             else:
                 y = y - 1
@@ -227,10 +222,16 @@ if __name__ == "__main__":
             print("The position Y must be in the range 1 and 101")
 
 
-    my_torus = Langton((101, 82), (y, x), orientation, conf)
+    langton_ant = Langton((101, 82), (y, x), orientation, conf)
 
-    for i in range(11):
-        my_torus.next()
-        test = np.matrix(my_torus.grid)
-        draw(test)
+    root = Tk()
+    root.title("Langton's Ant: "+conf+", "+orientation+", ("+str(y+1)+", "+str(x+1)+")")
+    ex = DrawGrid(root, langton_ant)
+    root.mainloop()
+
+
+    # for i in range(11):
+    #     my_torus.next()
+    #     test = np.matrix(my_torus.grid)
+        # draw(test)
 
