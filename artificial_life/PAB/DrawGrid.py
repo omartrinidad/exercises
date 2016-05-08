@@ -151,8 +151,15 @@ class DrawGrid(Frame):
             item_id = self.rect[row, col]
             self.canvas.itemconfig(item_id, fill="black")
 
+        print_out_file(len(nonzero_idx[0]), "w" if i==0 else "a")
         self.langton_ant.next()
         self.after(delay, lambda: self.draw_result(delay, i+1))
+
+def print_out_file(n, m):
+    with open("langton_ant_output.txt", m) as myfile:
+        myfile.write(str(n))
+        myfile.write('\n')
+
 
 
 if __name__ == "__main__":
