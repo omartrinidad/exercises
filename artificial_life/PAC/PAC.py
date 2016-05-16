@@ -24,16 +24,15 @@ class F:
         return s
 
     def printResult(self):
-        print "X"
-        for i in self.x:
-            print "%s " % i
-        print "Y"
-        for i in self.y:
-            print "%s " % i
+        print "X: "
+        print [i for i in self.x]
+        print "Y:"
+        print [i for i in self.y]
 
-parameters = {'a': 0.1, 'b': -0.1, 'c': 0.1, 'd': -0.1, 'e': 0.1, 'f': 0.1, 'g': 0.0, 'h': 0.0}
-x0 = 1.0
-y0 = 1.0
+
+parameters = {'a': 0.1, 'b': -0.5, 'c': 0.1, 'd': -0.2, 'e': 0.1, 'f': 0.1, 'g': 0.0, 'h': 0.0}
+x0 = 100.0
+y0 = 30.0
 steps = 10
 X = F(params=parameters, x0=x0, y0=y0, steps=steps)
 
