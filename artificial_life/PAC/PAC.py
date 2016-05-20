@@ -43,12 +43,14 @@ class F:
 
 
 parameters = {
-              'a': 1.6, 'b': -1, 'c': -1, 'd': 1.6, 'e': 0.01, 'f': 0.01,
+              'e': -0.015, 'f': 0.015,
+              'a': 0.16, 'd': -0.16,
+              'b': -0.59, 'c': -0.59,
               #'g': 0.0, 'h': 0.0
              }
-x0 = 100
-y0 = 50
-steps = 10
+x0 = 10
+y0 = 3
+steps = 200
 
 X = F(params=parameters, x0=x0, y0=y0, steps=steps)
 X.do_function(0)
