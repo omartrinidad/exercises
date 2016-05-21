@@ -2,7 +2,7 @@
 # set output 'plot.jpg'
 set grid
 set title "Predator-Prey Model"
-set xrange [0:200]
+#set xrange [0:200]
 set xlabel "Steps"
 set ylabel "Population"
 plot 'results.csv' u 1:2 w lp t 'prey',\
