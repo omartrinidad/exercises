@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import csv
+
 
 cells = list(np.zeros(101))
 
@@ -8,7 +8,7 @@ cells[0] = 42000
 cells[100] = 420
 
 gens = [list(cells)]
-alpha = 0.33
+alpha = 0.1
 
 for i in range(0, 100):
     cells2 = list(cells)
@@ -17,12 +17,9 @@ for i in range(0, 100):
 
     gens.append(list(cells))
 
-# output = open("A33.csv", 'w')
 
 with open('A33.csv', 'w') as output:
     for gen in gens:
         for item in gen:
             output.write("%s " % item)
         output.write("\n")
-
-# output.close()
